@@ -78,12 +78,17 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void CreateGameSession();
 
-	void CreateSessionComplete(FName Sessionname, bool bWasSuccessful);
+	//Find game sessions
+	UFUNCTION(BlueprintCallable)
+	void JoinGameSession();
 
+	void OnCreateSessionComplete(FName Sessionname, bool bWasSuccessful);
+	void OnFindSessionsComplete(bool bWasSuccessful);
 private:
 
 	FOnCreateSessionCompleteDelegate CreateSessionCompleteDelegate;
-
+	FOnFindSessionsCompleteDelegate FindSessionsCompleteDelegate;
+	TSharedPtr<FOnlineSessionSearch> SessionSearch;
 #pragma endregion
 
 	
