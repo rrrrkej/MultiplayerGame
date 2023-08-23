@@ -78,11 +78,14 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void CreateGameSession();
 
+	void CreateSessionComplete(FName Sessionname, bool bWasSuccessful);
+
 private:
 
 	FOnCreateSessionCompleteDelegate CreateSessionCompleteDelegate;
+
 #pragma endregion
 
 	
-};
+}; 
 

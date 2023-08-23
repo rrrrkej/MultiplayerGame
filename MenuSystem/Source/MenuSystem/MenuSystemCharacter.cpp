@@ -11,6 +11,7 @@
 #include "DebugHeader.h"
 #include "OnlineSubsystem.h"
 #include "Interfaces/OnlineSessionInterface.h"
+#include "OnlineSessionSettings.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AMenuSystemCharacter
@@ -111,10 +112,33 @@ void AMenuSystemCharacter::CreateGameSession()
 	{
 		OnlineSessionInterface->DestroySession(NAME_GameSession);
 	}
+
+	//把声明的委托添加到委托列表中
+	OnlineSessionInterface->AddOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegate);
+
+	TSharedPtr<FOnlineSessionSettings> SessionSettings = MakeShareable(new FOnlineSessionSettings());
+	SessionSettings->bIsLANMatch = false;
+	SessionSettings->NumPublicConnections = 4;
+	SessionSettings->bAllowJoinInProgress = true;	//过程中加入
+	SessionSettings->bAllowJoinViaPresence = true;	//是否可以通过“在线状态”进入游戏
+	SessionSettings->bShouldAdvertise = true;		//steam广播session
+	SessionSettings->bUsesPresence = true;
+	SessionSettings->bUseLobbiesIfAvailable = true;	//是否在可用的状态下使用大厅
+
+	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+	OnlineSessionInterface->CreateSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, *SessionSettings);
 }
 
-void AMenuSystemCharacter::CreateSessionComplete(FName Sessionname, bool bWasSuccessful)
+void AMenuSystemCharacter::CreateSessionComplete(FName SessionName, bool bWasSuccessful)
 {
+	if (bWasSuccessful)
+	{
+		DebugHeader::Print((TEXT("Created session : ") + SessionName.ToString()), FColor::Green);
+	}
+	else
+	{
+		DebugHeader::Print(FString(TEXT("Failed to create session!")), FColor::Red);
+	}
 
 }
 #pragma endregion
