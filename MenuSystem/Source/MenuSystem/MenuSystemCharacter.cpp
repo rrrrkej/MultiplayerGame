@@ -68,11 +68,8 @@ AMenuSystemCharacter::AMenuSystemCharacter():
 
 		DebugHeader::Print(FString::Printf(TEXT("Found subsystem %s"), *OnlineSubsystem->GetSubsystemName().ToString()), FColor::Cyan);
 	}
-
-#pragma endregion
-
-
 }
+#pragma endregion
 
 //////////////////////////////////////////////////////////////////////////
 // Input
