@@ -19,7 +19,8 @@
 AMenuSystemCharacter::AMenuSystemCharacter():
 	//创建了一个委托实例并进行赋值
 	CreateSessionCompleteDelegate(FOnCreateSessionCompleteDelegate::CreateUObject(this, &AMenuSystemCharacter::OnCreateSessionComplete)),
-	FindSessionsCompleteDelegate(FOnFindSessionsCompleteDelegate::CreateUObject(this, &ThisClass::OnFindSessionsComplete))
+	FindSessionsCompleteDelegate(FOnFindSessionsCompleteDelegate::CreateUObject(this, &ThisClass::OnFindSessionsComplete)),
+	JoinSessionCompleteDelegate(FOnJoinSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnJoinSessionComplete))
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -125,7 +126,7 @@ void AMenuSystemCharacter::CreateGameSession()
 	SessionSettings->bShouldAdvertise = true;		//steam广播session
 	SessionSettings->bUsesPresence = true;
 	SessionSettings->bUseLobbiesIfAvailable = true;	//是否在可用的状态下使用大厅
-
+	SessionSettings->Set(FName("MatchType"), FString("FreeForAll"), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);	//设置游戏模式
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 	OnlineSessionInterface->CreateSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, *SessionSettings);
 }
@@ -137,13 +138,15 @@ void AMenuSystemCharacter::JoinGameSession()
 		return;
 	}
 
+	//绑定委托实例
 	OnlineSessionInterface->AddOnFindSessionsCompleteDelegate_Handle(FindSessionsCompleteDelegate);
 
 	SessionSearch = MakeShareable(new FOnlineSessionSearch());
-	SessionSearch->MaxSearchResults = 10000;	//所使用的steam开发接口为480是公用接口，应该会有很多结果
+	SessionSearch->MaxSearchResults = 10000;	//所使用的steam开发接口为480是公用接口，应该会有很多结果?
 	SessionSearch->bIsLanQuery = false;
 	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
 
+	//Find session
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 	OnlineSessionInterface->FindSessions(*LocalPlayer->GetPreferredUniqueNetId(), SessionSearch.ToSharedRef());
 
@@ -155,6 +158,13 @@ void AMenuSystemCharacter::OnCreateSessionComplete(FName SessionName, bool bWasS
 	if (bWasSuccessful)
 	{
 		DebugHeader::Print((TEXT("Created session : ") + SessionName.ToString()), FColor::Green);
+
+		//打开大厅
+		UWorld* World = GetWorld();
+		if (World)
+		{
+			World->ServerTravel(FString("/Game/_Development/Lobby?listen"));
+		}
 	}
 	else
 	{
@@ -165,11 +175,51 @@ void AMenuSystemCharacter::OnCreateSessionComplete(FName SessionName, bool bWasS
 
 void AMenuSystemCharacter::OnFindSessionsComplete(bool bWasSuccessful)
 {
+	if (!OnlineSessionInterface.IsValid())
+	{
+		return;
+	}
+
 	for (auto Result : SessionSearch->SearchResults)
 	{
 		FString Id = Result.GetSessionIdStr();
 		FString User = Result.Session.OwningUserName;
+		FString MatchType;
+		Result.Session.SessionSettings.Get(FName("MatchType"), MatchType);
+		
 		DebugHeader::Print(TEXT("ID: ") + Id + TEXT(" , User: ") + User, FColor::Cyan);
+
+		if (MatchType == FString("FreeForAll"))
+		{
+			DebugHeader::Print(FString::Printf(TEXT("Join Match Type : %s"), *MatchType), FColor::Cyan);
+
+			//绑定委托实例
+			OnlineSessionInterface->AddOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegate);
+
+			//Join session
+			const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+			OnlineSessionInterface->JoinSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, Result);
+		}
+	}
+}
+
+void AMenuSystemCharacter::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
+{
+	if (!OnlineSessionInterface.IsValid())
+	{
+		return;
+	}
+
+	FString Address;
+	if (OnlineSessionInterface->GetResolvedConnectString(NAME_GameSession, Address))
+	{
+		DebugHeader::Print(TEXT("Connect string: ") + Address, FColor::Cyan);
+	}
+
+	APlayerController* PlayerController = GetGameInstance()->GetFirstLocalPlayerController();
+	if (PlayerController)
+	{
+		PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
 	}
 }
 
