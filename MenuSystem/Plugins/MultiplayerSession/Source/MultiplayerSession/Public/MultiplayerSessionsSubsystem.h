@@ -22,14 +22,22 @@ public:
 	//
 	// To handle session functionality. The Menu class will call these
 	//
-	/*创建会话*/
+
+	/** 创建会话
+	* @NumPublicConnections NumPublicConnections的数量
+	* @MatchType 
+	*/
 	void CreateSession(int32 NumPublicConnections, FString MatchType);
+
 	/*查找会话*/
 	void FindSessions(int32 MaxSearchResults);
+
 	/*加入会话*/
 	void JoinSession(const FOnlineSessionSearchResult& SessionResult);
+
 	/*关闭会话*/
 	void DestroySession();
+
 	/*开始会话*/
 	void StartSession();
 
@@ -47,7 +55,7 @@ protected:
 private:
 
 	IOnlineSessionPtr SessionInterface;
-
+	TSharedPtr<FOnlineSessionSettings> LastSessionSettings;
 	//
 	// To add to the Online Session Interface delegate list
 	// We'll bind our MultiplayerSessionSubsystem internal callbacks to these.
