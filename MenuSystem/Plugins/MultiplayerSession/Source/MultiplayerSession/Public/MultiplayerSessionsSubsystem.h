@@ -1,0 +1,66 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Subsystems/GameInstanceSubsystem.h"
+#include "Interfaces/OnlineSessionInterface.h"
+#include "MultiplayerSessionsSubsystem.generated.h"
+
+
+/**
+ * 
+ */
+UCLASS()
+class MULTIPLAYERSESSION_API UMultiplayerSessionsSubsystem : public UGameInstanceSubsystem
+{
+	GENERATED_BODY()
+	
+public:
+	UMultiplayerSessionsSubsystem();
+
+	//
+	// To handle session functionality. The Menu class will call these
+	//
+	/*创建会话*/
+	void CreateSession(int32 NumPublicConnections, FString MatchType);
+	/*查找会话*/
+	void FindSessions(int32 MaxSearchResults);
+	/*加入会话*/
+	void JoinSession(const FOnlineSessionSearchResult& SessionResult);
+	/*关闭会话*/
+	void DestroySession();
+	/*开始会话*/
+	void StartSession();
+
+protected:
+
+	//
+	// Internal callbacks for the delegates we'll add to the Online Session Interface delegate list.
+	// These don't need to called outside this class.
+	//
+	void OnCreateSessionComplete(FName SessionName, bool bWasSuccessful);
+	void OnFindSessionsComplete(bool bWasSuccesful);
+	void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
+	void OnDestroySessionComplete(FName SessionName, bool bWasSuccessful);
+	void OnStartSessionComplete(FName SessionName, bool bWasSuccessful);
+private:
+
+	IOnlineSessionPtr SessionInterface;
+
+	//
+	// To add to the Online Session Interface delegate list
+	// We'll bind our MultiplayerSessionSubsystem internal callbacks to these.
+	//
+	FOnCreateSessionCompleteDelegate CreateSessionCompleteDelegate;
+	FDelegateHandle CreateSessionCompleteDelegateHandle;
+	FOnFindSessionsCompleteDelegate FindSessionsCompleteDelegate;
+	FDelegateHandle FindSessionsCompleteDelegateHandle;
+	FOnJoinSessionCompleteDelegate JoinSessionCompleteDelegate;
+	FDelegateHandle JoinSessionCompleteDelegateHandle;
+	FOnDestroySessionCompleteDelegate DestroySessionCompleteDelegate;
+	FDelegateHandle DestroySessionCompleteDelegateHandle;
+	FOnStartSessionCompleteDelegate StartSessionCompleteDelegate;
+	FDelegateHandle StartSessionCompleteDelegateHandle;
+
+};
