@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Interfaces/OnlineSessionInterface.h"
 #include "Menu.generated.h"
 
 /**
@@ -24,7 +25,25 @@ public:
 protected:
 
 	virtual bool Initialize() override;
+
+	/*加载其他关卡的时候自动调用*/
 	virtual void OnLevelRemovedFromWorld(ULevel* InLevel, UWorld* InWorld) override;
+
+	//
+	// Callbacks for the custom delegates on the MultiplayerSessionsSubsystem
+	//
+	UFUNCTION()
+	void OnCreateSession(bool bWasSuccessful);
+
+	void OnFindSessions(const TArray<FOnlineSessionSearchResult>& SessionResults, bool bWasSuccessful);
+	
+	void OnJoinSession(EOnJoinSessionCompleteResult::Type Result);
+
+	UFUNCTION()
+	void OnDestroySession(bool bWasSuccessful);
+
+	UFUNCTION()
+	void OnStartSession(bool bWasSuccessful);
 
 private:
 	UPROPERTY(meta = (BindWidget))

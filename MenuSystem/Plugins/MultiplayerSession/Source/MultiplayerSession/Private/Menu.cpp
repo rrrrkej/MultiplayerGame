@@ -5,6 +5,8 @@
 #include "DebugHeader.h"
 #include "Components/Button.h"
 #include "MultiplayerSessionsSubsystem.h"
+#include "OnlineSessionSettings.h"
+
 
 void UMenu::MenuSetup(int NumberOfPublicConnections, FString TypeOfMatch)
 {
@@ -33,6 +35,15 @@ void UMenu::MenuSetup(int NumberOfPublicConnections, FString TypeOfMatch)
 	{
 		MultiplayerSessionsSubsystem = GameInstance->GetSubsystem<UMultiplayerSessionsSubsystem>();
 	}
+
+	if (MultiplayerSessionsSubsystem)
+	{
+		MultiplayerSessionsSubsystem->MultiplayerOnCreateSessionComplete.AddDynamic(this, &ThisClass::OnCreateSession);
+		MultiplayerSessionsSubsystem->MultiplayerOnFindSessionsComplete.AddUObject(this, &ThisClass::OnFindSessions);
+		MultiplayerSessionsSubsystem->MultiplayerOnJoinSessionComplete.AddUObject(this, &ThisClass::OnJoinSession);
+		MultiplayerSessionsSubsystem->MultiplayerOnDestroySessionComplete.AddDynamic(this, &ThisClass::OnDestroySession);
+		MultiplayerSessionsSubsystem->MultiplayerOnStartSessionComplete.AddDynamic(this, &ThisClass::OnStartSession);
+	}
 }
 
 bool UMenu::Initialize()
@@ -60,6 +71,39 @@ void UMenu::OnLevelRemovedFromWorld(ULevel* InLevel, UWorld* InWorld)
 	Super::OnLevelRemovedFromWorld(InLevel, InWorld);
 }
 
+#pragma region Delegate response founction
+void UMenu::OnCreateSession(bool bWasSuccessful)
+{
+	if (bWasSuccessful)
+	{
+		DebugHeader::Print(TEXT("Create Session Successfully!"), FColor::Cyan);
+
+		UWorld* World = GetWorld();
+		if (World)
+		{
+			World->ServerTravel("/Game/_Development/Lobby?listen");
+		}
+	}
+}
+
+void UMenu::OnFindSessions(const TArray<FOnlineSessionSearchResult>& SessionResults, bool bWasSuccessful)
+{
+}
+
+void UMenu::OnJoinSession(EOnJoinSessionCompleteResult::Type Result)
+{
+}
+
+void UMenu::OnDestroySession(bool bWasSuccessful)
+{
+}
+
+void UMenu::OnStartSession(bool bWasSuccessful)
+{
+}
+
+#pragma endregion
+
 #pragma region ButtonClickedFounction
 void UMenu::HostButtonClicked()
 {
@@ -68,11 +112,6 @@ void UMenu::HostButtonClicked()
 	if (MultiplayerSessionsSubsystem)
 	{
 		MultiplayerSessionsSubsystem->CreateSession(NumPublicConnections, MatchType);
-		UWorld* World = GetWorld();
-		if (World)
-		{
-			World->ServerTravel("/Game/_Development/Lobby?listen");
-		}
 	}
 }
 
