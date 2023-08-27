@@ -9,8 +9,9 @@
 #include "OnlineSubsystem.h"
 
 
-void UMenu::MenuSetup(int NumberOfPublicConnections, FString TypeOfMatch)
+void UMenu::MenuSetup(int NumberOfPublicConnections, FString TypeOfMatch, FString LobbyPath)
 {
+	PathToLobby = FString::Printf(TEXT("%s?listen"), *LobbyPath);
 	NumPublicConnections = NumberOfPublicConnections;
 	MatchType = TypeOfMatch;
 	AddToViewport();
@@ -82,8 +83,13 @@ void UMenu::OnCreateSession(bool bWasSuccessful)
 		UWorld* World = GetWorld();
 		if (World)
 		{
-			World->ServerTravel("/Game/_Development/Lobby?listen");
+			World->ServerTravel(PathToLobby);
 		}
+	}
+	else
+	{
+		DebugHeader::Print(TEXT("Failed to create session!"), FColor::Red);
+		HostButton->SetIsEnabled(true);
 	}
 }
 
@@ -91,6 +97,7 @@ void UMenu::OnFindSessions(const TArray<FOnlineSessionSearchResult>& SessionResu
 {
 	if (MultiplayerSessionsSubsystem == nullptr)
 	{
+		DebugHeader::Print(("MultiplayerSessionsSubsystem = nullptr"), FColor::Red);
 		return;
 	}
 
@@ -101,15 +108,46 @@ void UMenu::OnFindSessions(const TArray<FOnlineSessionSearchResult>& SessionResu
 		Result.Session.SessionSettings.Get(FName("MatchType"), SettingsValue);
 		if (SettingsValue == MatchType)
 		{
+			DebugHeader::Print(TEXT("MatchType match successful."), FColor::Green);
 			MultiplayerSessionsSubsystem->JoinSession(Result);
 			return;
 		}
+	}
+
+	if (!bWasSuccessful || SessionResults.Num() == 0)
+	{
+		JoinButton->SetIsEnabled(true);
 	}
 }
 
 void UMenu::OnJoinSession(EOnJoinSessionCompleteResult::Type Result)
 {
 	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
+
+	switch (Result)
+	{
+	case EOnJoinSessionCompleteResult::Success:
+		DebugHeader::Print("Success", FColor::Green);
+		break;
+	case EOnJoinSessionCompleteResult::SessionIsFull:
+		DebugHeader::Print("SessionIsFull", FColor::Green);
+		break;
+	case EOnJoinSessionCompleteResult::SessionDoesNotExist:
+		DebugHeader::Print("SessionDoesNotExist", FColor::Green);
+		break;
+	case EOnJoinSessionCompleteResult::CouldNotRetrieveAddress:
+		DebugHeader::Print("CouldNotRetrieveAddress", FColor::Green);
+		break;
+	case EOnJoinSessionCompleteResult::AlreadyInSession:
+		DebugHeader::Print("AlreadyInSession", FColor::Green);
+		break;
+	case EOnJoinSessionCompleteResult::UnknownError:
+		DebugHeader::Print("UnknownError", FColor::Green);
+		break;
+	default:
+		break;
+	}
+
 	if (Subsystem)
 	{
 		IOnlineSessionPtr SessionInterface = Subsystem->GetSessionInterface();
@@ -141,7 +179,8 @@ void UMenu::OnStartSession(bool bWasSuccessful)
 void UMenu::HostButtonClicked()
 {
 	DebugHeader::Print(TEXT("Host Button Clicked."), FColor::Cyan);
-	
+
+	HostButton->SetIsEnabled(false);
 	if (MultiplayerSessionsSubsystem)
 	{
 		MultiplayerSessionsSubsystem->CreateSession(NumPublicConnections, MatchType);
@@ -150,6 +189,7 @@ void UMenu::HostButtonClicked()
 
 void UMenu::JoinButtonClicked()
 {
+	JoinButton->SetIsEnabled(false);
 	if (MultiplayerSessionsSubsystem)
 	{
 		MultiplayerSessionsSubsystem->FindSessions(10000);

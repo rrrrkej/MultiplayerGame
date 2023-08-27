@@ -12,7 +12,7 @@
 //Declaring out own custom delegates for the Menu class to bind callbacks to 
 //
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMultiplayerOnCreateSessionComplete, bool, bWasSuccessful);
-DECLARE_MULTICAST_DELEGATE_TwoParams(FMultiplayerOnFindSessionsComplete, const TArray<FOnlineSessionSearchResult>& SessionResults, bool bWasSuccessful);	//DynamicÎ¯ÍÐ²ÎÊýºÍÀàÐÍ¼ä²»ÐèÒª¶ººÅ
+DECLARE_MULTICAST_DELEGATE_TwoParams(FMultiplayerOnFindSessionsComplete, const TArray<FOnlineSessionSearchResult>& SessionResults, bool bWasSuccessful);	//DynamicÎ¯ï¿½Ð²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¼ä²»ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½
 DECLARE_MULTICAST_DELEGATE_OneParam(FMultiplayerOnJoinSessionComplete, EOnJoinSessionCompleteResult::Type Result);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMultiplayerOnDestroySessionComplete, bool, bWasSuccessful);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMultiplayerOnStartSessionComplete, bool, bWasSuccessful);
@@ -32,22 +32,18 @@ public:
 	// To handle session functionality. The Menu class will call these
 	//
 
-	/** ´´½¨»á»°
-	* @NumPublicConnections NumPublicConnectionsµÄÊýÁ¿
+	/** ï¿½ï¿½ï¿½ï¿½ï¿½á»°
+	* @NumPublicConnections NumPublicConnectionsï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	* @MatchType 
 	*/
 	void CreateSession(int32 NumPublicConnections, FString MatchType);
-
-	/*²éÕÒ»á»°*/
+	/*ï¿½ï¿½ï¿½Ò»á»°*/
 	void FindSessions(int32 MaxSearchResults);
-
-	/*¼ÓÈë»á»°*/
+	/*ï¿½ï¿½ï¿½ï¿½á»°*/
 	void JoinSession(const FOnlineSessionSearchResult& SessionResult);
-
-	/*¹Ø±Õ»á»°*/
+	/*ï¿½Ø±Õ»á»°*/
 	void DestroySession();
-
-	/*¿ªÊ¼»á»°*/
+	/*ï¿½ï¿½Ê¼ï¿½á»°*/
 	void StartSession();
 
 	//
@@ -91,4 +87,7 @@ private:
 	FOnStartSessionCompleteDelegate StartSessionCompleteDelegate;
 	FDelegateHandle StartSessionCompleteDelegateHandle;
 
+	bool	bCreateSessionOnDestroy{ false };
+	int32	LastNumPublicConnections;
+	FString LastMatchType;
 };
