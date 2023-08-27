@@ -11,7 +11,7 @@
  * 
  */
 class UButton;
-class UMultiplayerSessionsSubsystem;
+class UMultiplayerSessionsSubsystem; 
 
 UCLASS()
 class MULTIPLAYERSESSION_API UMenu : public UUserWidget
