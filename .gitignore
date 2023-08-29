@@ -76,3 +76,10 @@ Build/*/**
 
 #Package file :Temporarily ignore the package file.
 Package/*
+
+# Asset Package
+MultiplayerTPS/Content/*
+## EPIC MarketPlace named "AnimStarterPack"
+*/Content/AnimStarterPack/* 
+## EPIC MarketPlace named "Millitary Weapons Silver"
+*/Content/MilitaryWeapSilver/* 
