@@ -32,18 +32,18 @@ public:
 	// To handle session functionality. The Menu class will call these
 	//
 
-	/** �����Ự
+	/** 创建会话
 	* @NumPublicConnections NumPublicConnections������
 	* @MatchType 
 	*/
 	void CreateSession(int32 NumPublicConnections, FString MatchType);
-	/*���һỰ*/
+	/* 查找会话 */
 	void FindSessions(int32 MaxSearchResults);
-	/*����Ự*/
+	/* 加入会话 */
 	void JoinSession(const FOnlineSessionSearchResult& SessionResult);
-	/*�رջỰ*/
+	/* 关闭会话 */
 	void DestroySession();
-	/*��ʼ�Ự*/
+	/* 开始会话 */
 	void StartSession();
 
 	//

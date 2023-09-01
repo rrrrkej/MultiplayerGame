@@ -26,7 +26,7 @@ protected:
 
 	virtual bool Initialize() override;
 
-	/*���������ؿ���ʱ���Զ�����*/
+	/* 加载其他关卡的时候自动调用 */
 	virtual void OnLevelRemovedFromWorld(ULevel* InLevel, UWorld* InWorld) override;
 
 	//
