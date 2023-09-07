@@ -9,6 +9,9 @@
 
 class USpringArmComponent;
 class UCameraComponent;
+class UWidgetComponent;
+class AWeapon;
+class UCombatComponent;
 UCLASS()
 class MULTIPLAYERTPS_API AMP_Character : public ACharacter
 {
@@ -20,10 +23,10 @@ public:
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void PostInitializeComponents() override;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -35,6 +38,21 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	UCameraComponent* FollowCamera;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UWidgetComponent* OverheadWidget;
+
+	UPROPERTY(ReplicatedUsing = OnRep_OverlappingWeapon)
+	AWeapon* OverlappingWeapon;
+
+	UFUNCTION()
+	void OnRep_OverlappingWeapon(AWeapon* LastWeapon); 
+	
+	UPROPERTY(VisibleAnywhere)
+	UCombatComponent* CombatComponent;
+
+	UFUNCTION(Server, Reliable)
+	void ServerEquipButtonPressed();
 
 #pragma region InputBinding
 private:
@@ -55,6 +73,10 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* LookAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* InteractAction;
+
+
 protected:
 
 	/** Called for movement input */
@@ -65,8 +87,11 @@ protected:
 
 	/** Called for jump */
 	void Jump(const FInputActionValue& Value);
+
+	/** Called for Interaction */
+	void Interaction(const FInputActionValue& Value);
 #pragma endregion
 
 public:	
-	
+	void SetOverlappingWeapon(AWeapon* Weapon);
 };

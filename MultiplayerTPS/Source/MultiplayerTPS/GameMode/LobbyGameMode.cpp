@@ -12,7 +12,7 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 
 	int32 NumberOfPlayers = GameState.Get()->PlayerArray.Num();
 
-	if (NumberOfPlayers == 2)
+	if (NumberOfPlayers >= 2)
 	{
 		if(BP_UCountdownWidgetClass)
 		CountdownWidget = CreateWidget<UCountdownWidget>(GetWorld(), BP_UCountdownWidgetClass);
@@ -23,6 +23,7 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 
 void ALobbyGameMode::GameStart()
 {
+	CountdownWidget->RemoveFromParent();
 	UWorld* World = GetWorld();
 	if (World)
 	{	
