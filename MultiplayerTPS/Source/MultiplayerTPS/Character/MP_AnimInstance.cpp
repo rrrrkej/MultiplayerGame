@@ -4,6 +4,9 @@
 #include "MP_AnimInstance.h"
 #include "MP_Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "MultiplayerTPS/DebugHeader.h"
+#include "MultiplayerTPS/Weapon/Weapon.h"
 
 void UMP_AnimInstance::NativeInitializeAnimation()
 {
@@ -34,5 +37,46 @@ void UMP_AnimInstance::NativeUpdateAnimation(float DeltaTime)
 
 	// Get Character if Accelerating
 	bIsAccelerating = MP_Character->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0 ? true : false;
+	
+	//Update bWeaponEquipped state
+	bWeaponEquipped = MP_Character->IsWeaponEquipped();
+	EquippedWeapon = MP_Character->GetEquippedWeapon();
 
+	//Update bIsCrouch state
+	bIsCrouched = MP_Character->bIsCrouched;
+
+	//Update bAiming state
+	bAiming = MP_Character->IsAiming();
+
+	//Update TurningInPlace
+	TurningInPlace = MP_Character->GetTurningInPlace();
+	
+	//Update YawOffset
+	FRotator AimRotation = MP_Character->GetBaseAimRotation();//this founction return the world rotation of controller
+	FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(MP_Character->GetVelocity());//this founction return the world rotation of argument
+	FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(MovementRotation, AimRotation);
+	DeltaRotation = FMath::RInterpTo(DeltaRotation, DeltaRot, DeltaTime, 10.f);
+	YawOffset = DeltaRotation.Yaw;
+
+	//Update Lean
+	CharacterRotationLastFrame = CharacterRotation;
+	CharacterRotation = MP_Character->GetActorRotation();
+	const FRotator Delta = UKismetMathLibrary::NormalizedDeltaRotator(CharacterRotation, CharacterRotationLastFrame);
+	const float Target = Delta.Yaw / DeltaTime;
+	const float Interp = FMath::FInterpTo(Lean, Target, DeltaTime, 6.f);
+	Lean = FMath::Clamp(Interp, -90.f, 90.f);
+
+	//Update AimOffset
+	AO_Yaw = MP_Character->GetAO_Yaw();
+	AO_Pitch = MP_Character->GetAO_Pitch();
+
+	if (bWeaponEquipped && EquippedWeapon && EquippedWeapon->GetWeaponMesh() && MP_Character->GetMesh())
+	{
+		LeftHandTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("LeftHandSocket"), ERelativeTransformSpace::RTS_World);
+		FVector OutPosition;
+		FRotator OutRotation;
+		MP_Character->GetMesh()->TransformToBoneSpace(FName("hand_r"), LeftHandTransform.GetLocation(), FRotator::ZeroRotator, OutPosition, OutRotation);
+		LeftHandTransform.SetLocation(OutPosition);
+		LeftHandTransform.SetRotation(FQuat(OutRotation));
+	} 
 }

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
+#include "MultiplayerTPS/Types/TurningInPlace.h"
 #include "MP_Character.generated.h"
 
 class USpringArmComponent;
@@ -31,6 +32,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	void AimOffset(float DeltaTime);
 private:
 
 	UPROPERTY(VisibleAnywhere, Category = Camera)
@@ -54,6 +56,16 @@ private:
 	UFUNCTION(Server, Reliable)
 	void ServerEquipButtonPressed();
 
+	/* aimoffset animation*/
+	float AO_Yaw;
+	float InterpAO_Yaw; //used in turning in place
+	float AO_Pitch;
+	FRotator StartingAimRotation;
+
+	//Turning in place
+	ETurningInPlace TurningInPlace;
+	void TurnInPlace(float DeltaTime);
+
 #pragma region InputBinding
 private:
 
@@ -76,7 +88,11 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* InteractAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* CrouchAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* AimAction;
 protected:
 
 	/** Called for movement input */
@@ -90,8 +106,27 @@ protected:
 
 	/** Called for Interaction */
 	void Interaction(const FInputActionValue& Value);
+
+	/** Called for Crouch */
+	void Crouch(const FInputActionValue& Value);
+
+	/**Called for Aim */
+	void Aim(const FInputActionValue& Value);
+	void EndAim(const FInputActionValue& Value);
+
 #pragma endregion
 
 public:	
+	//Access Weapon class
 	void SetOverlappingWeapon(AWeapon* Weapon);
+
+	//Access CombatComponent class
+	bool IsWeaponEquipped();
+	bool IsAiming();
+
+	// be accessed by AnimInstance class
+	FORCEINLINE float GetAO_Yaw() const { return AO_Yaw; }
+	FORCEINLINE float GetAO_Pitch() const { return AO_Pitch; }
+	AWeapon* GetEquippedWeapon();
+	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; }
 };

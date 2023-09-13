@@ -12,6 +12,8 @@
 #include "Net/UnrealNetwork.h"
 #include "MultiplayerTPS/Weapon/Weapon.h"
 #include "MultiplayerTPS/MP_Components/CombatComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 
 // Sets default values
 AMP_Character::AMP_Character()
@@ -40,6 +42,16 @@ AMP_Character::AMP_Character()
 	//initialize CombatComponent
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 	CombatComponent->SetIsReplicated(true);
+
+	//Set properties in CMC
+	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
+
+	//Set Camera block
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+
+	//initial properties
+	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 }
 
 void AMP_Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -66,6 +78,10 @@ void AMP_Character::PostInitializeComponents()
 void AMP_Character::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	AimOffset(DeltaTime);
+
+	
 }
 
 // Called when the game starts or when spawned
@@ -79,6 +95,68 @@ void AMP_Character::BeginPlay()
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
+		}
+	}
+}
+
+void AMP_Character::AimOffset(float DeltaTime)
+{
+	if(CombatComponent && CombatComponent->EquippedWeapon == nullptr)  return;
+	FVector Velocity = GetVelocity();
+	Velocity.Z = 0.f;
+	float Speed = Velocity.Size();
+	bool bIsInAir = GetCharacterMovement()->IsFalling();
+
+	if (Speed == 0.f && !bIsInAir)	//standing still, not jumping
+	{
+		FRotator CurrentAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
+		FRotator DeltaAimRotation = UKismetMathLibrary::NormalizedDeltaRotator(StartingAimRotation, CurrentAimRotation);
+		AO_Yaw = DeltaAimRotation.Yaw;
+		if (TurningInPlace == ETurningInPlace::ETIP_NotTurning)
+		{
+			InterpAO_Yaw = AO_Yaw;
+		}
+		bUseControllerRotationYaw = true;	
+		TurnInPlace(DeltaTime);
+	}
+
+	if (Speed > 0.f || bIsInAir)	// running, or jumping
+	{
+		StartingAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
+		AO_Yaw = 0.f;
+		bUseControllerRotationYaw = true; 
+		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+	}
+
+	AO_Pitch = GetBaseAimRotation().Pitch;
+	//由于Pitch在网络传输的过程中由有符号数变成无符号数，所以要映射回去
+	if (AO_Pitch > 90.f && !IsLocallyControlled())
+	{
+		// map pitch from [270, 360) to [-90, 0)
+		FVector2D InRange(270.f, 360.f);
+		FVector2D OutRange(-90.f, 0.f);
+		AO_Pitch = FMath::GetMappedRangeValueClamped(InRange, OutRange, AO_Pitch);
+	}
+}
+
+void AMP_Character::TurnInPlace(float DeltaTime)
+{
+	if (AO_Yaw > 90.f)
+	{
+		TurningInPlace = ETurningInPlace::ETIP_Right;
+	 }
+	else if(AO_Yaw < -90.f)
+	{
+		TurningInPlace = ETurningInPlace::ETIP_Left;
+	}
+	if (TurningInPlace != ETurningInPlace::ETIP_NotTurning)
+	{
+		InterpAO_Yaw = FMath::FInterpTo(InterpAO_Yaw, 0.f, DeltaTime, 4.f);
+		AO_Yaw = InterpAO_Yaw;
+		if (FMath::Abs(AO_Yaw) < 15.f)
+		{
+			TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+			StartingAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
 		}
 	}
 }
@@ -123,6 +201,27 @@ void AMP_Character::ServerEquipButtonPressed_Implementation()
 	}
 }
 
+//Get the variable EquippedWeapon in CombatComponent class
+bool AMP_Character::IsWeaponEquipped()
+{
+	return (CombatComponent && CombatComponent->EquippedWeapon);
+}
+
+//Get the variable bAiming in CombatComponent class
+bool AMP_Character::IsAiming()
+{
+	return (CombatComponent && CombatComponent->bAiming);
+}
+#pragma region Public Getter and Setter
+
+AWeapon* AMP_Character::GetEquippedWeapon()
+{
+	if (CombatComponent == nullptr) return nullptr;
+	return CombatComponent->EquippedWeapon;
+}
+
+#pragma endregion
+
 #pragma region InputBinding
 // Called to bind functionality to input
 void AMP_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -142,11 +241,15 @@ void AMP_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 
 		//Interaction
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &AMP_Character::Interaction);
+
+		//Crouch
+		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Triggered, this, &AMP_Character::Crouch);
+
+		//Aim
+		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Triggered, this, &AMP_Character::Aim);
+		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &AMP_Character::EndAim);
 	}
 }
-
-
-
 
 void AMP_Character::Move(const FInputActionValue& Value)
 {
@@ -201,6 +304,38 @@ void AMP_Character::Interaction(const FInputActionValue& Value)
 		{
 			ServerEquipButtonPressed();
 		}
+	}
+}
+
+void AMP_Character::Crouch(const FInputActionValue& Value)
+{
+	if (bIsCrouched)
+	{
+		Super::UnCrouch();
+	}
+	else
+	{
+		Super::Crouch();
+	}
+	
+}
+
+void AMP_Character::Aim(const FInputActionValue& Value)
+{
+	bool bAiming = Value.Get<bool>();
+	if (CombatComponent)
+	{
+		CombatComponent->SetAiming(bAiming);
+	}
+	
+}
+
+void AMP_Character::EndAim(const FInputActionValue& Value)
+{
+	bool bAiming = Value.Get<bool>();
+	if (CombatComponent)
+	{
+		CombatComponent->SetAiming(bAiming);
 	}
 }
 
