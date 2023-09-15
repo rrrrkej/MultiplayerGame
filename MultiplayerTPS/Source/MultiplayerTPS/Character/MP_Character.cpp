@@ -45,10 +45,15 @@ AMP_Character::AMP_Character()
 
 	//Set properties in CMC
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
+	GetCharacterMovement()->RotationRate = FRotator(0.f, 0.f, 720.f);
 
 	//Set Camera block
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+
+	//Set Network properties
+	NetUpdateFrequency = 66.f;
+	MinNetUpdateFrequency = 33.f;
 
 	//initial properties
 	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
@@ -288,7 +293,15 @@ void AMP_Character::Look(const FInputActionValue& Value)
 
 void AMP_Character::Jump(const FInputActionValue& Value)
 {
-	Super::Jump();
+	if (bIsCrouched)
+	{
+		Super::UnCrouch();
+	}
+	else
+	{
+		Super::Jump();
+	}
+	
 }
 
 //Called by server
