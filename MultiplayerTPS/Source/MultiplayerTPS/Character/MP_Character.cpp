@@ -14,6 +14,7 @@
 #include "MultiplayerTPS/MP_Components/CombatComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "MultiplayerTPS/Character/MP_AnimInstance.h"
 
 // Sets default values
 AMP_Character::AMP_Character()
@@ -166,6 +167,20 @@ void AMP_Character::TurnInPlace(float DeltaTime)
 	}
 }
 
+void AMP_Character::PlayFireMontage(bool bAiming)
+{
+	if (CombatComponent == nullptr || CombatComponent->EquippedWeapon == nullptr) return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && FireWeaponMontage)
+	{
+		AnimInstance->Montage_Play(FireWeaponMontage);
+		FName SectionName;
+		SectionName = bAiming ? FName("RifleIronsight") : FName("RifleHip");
+		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+}
+
 //called by server
 void AMP_Character::SetOverlappingWeapon(AWeapon* Weapon)
 {
@@ -253,6 +268,10 @@ void AMP_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		//Aim
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Triggered, this, &AMP_Character::Aim);
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &AMP_Character::EndAim);
+
+		//Fire
+		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Triggered, this, &AMP_Character::Fire);
+		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, this, &AMP_Character::EndFire);
 	}
 }
 
@@ -349,6 +368,25 @@ void AMP_Character::EndAim(const FInputActionValue& Value)
 	if (CombatComponent)
 	{
 		CombatComponent->SetAiming(bAiming);
+	}
+}
+
+void AMP_Character::Fire(const FInputActionValue& Value)
+{
+	bool bFire = Value.Get<bool>();
+	if (CombatComponent)
+	{
+		//目前存在问题，按住鼠标会不停的执行
+		CombatComponent->FireButtonressed(bFire);
+	}
+}
+
+void AMP_Character::EndFire(const FInputActionValue& Value)
+{
+	bool bFire = Value.Get<bool>();
+	if (CombatComponent)
+	{
+		CombatComponent->FireButtonressed(bFire);
 	}
 }
 

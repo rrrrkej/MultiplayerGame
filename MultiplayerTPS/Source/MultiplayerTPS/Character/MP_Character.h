@@ -13,6 +13,8 @@ class UCameraComponent;
 class UWidgetComponent;
 class AWeapon;
 class UCombatComponent;
+class UAnimMontage;
+
 UCLASS()
 class MULTIPLAYERTPS_API AMP_Character : public ACharacter
 {
@@ -66,6 +68,15 @@ private:
 	ETurningInPlace TurningInPlace;
 	void TurnInPlace(float DeltaTime);
 
+#pragma region AnimMontage
+private:
+	UPROPERTY(EditAnywhere, Category = AnimMontage)
+	UAnimMontage* FireWeaponMontage;
+
+public:
+	void PlayFireMontage(bool bAiming);
+#pragma endregion
+
 #pragma region InputBinding
 private:
 
@@ -93,6 +104,9 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* AimAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* FireAction;
 protected:
 
 	/** Called for movement input */
@@ -113,6 +127,10 @@ protected:
 	/**Called for Aim */
 	void Aim(const FInputActionValue& Value);
 	void EndAim(const FInputActionValue& Value);
+
+	/** Called for Fire*/
+	void Fire(const FInputActionValue& Value);
+	void EndFire(const FInputActionValue& Value);
 
 #pragma endregion
 

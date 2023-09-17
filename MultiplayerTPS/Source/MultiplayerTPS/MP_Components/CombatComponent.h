@@ -31,6 +31,17 @@ protected:
 
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
+
+	void FireButtonressed(bool bPressed);
+
+	UFUNCTION(Server, Reliable)
+	void ServerFire(const FVector_NetQuantize& TraceHitTarget);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastFire(const FVector_NetQuantize& TraceHitTarget);
+
+	//计算屏幕中心命中结果
+	void TraceUnderCrosshairs(FHitResult& TraceHitResult);
 private:
 	class AMP_Character* Character;
 
@@ -47,4 +58,6 @@ private:
 	// speed of aiming walk
 	UPROPERTY(EditAnywhere)
 	float AimWalkSpeed;
+
+	bool bFireButtonPressed;
 };
