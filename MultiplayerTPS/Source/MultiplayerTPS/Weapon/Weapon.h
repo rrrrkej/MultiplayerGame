@@ -20,6 +20,7 @@ class USphereComponent;
 class UWidgetComponent;
 class UAnimationAsset;
 class ACasing;
+class UTexture2D;
 
 UCLASS()
 class MULTIPLAYERTPS_API AWeapon : public AActor
@@ -74,14 +75,38 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	UWidgetComponent* PickupWidget;
 
+	// AnimationAsset of weapon skeletal
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	UAnimationAsset* FireAnimation;
 
+	// Casing, is also called bullet shell.
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<ACasing> CasingClass;
+
+	/**
+	* Textures for the weapon crosshairs
+	*/
+	UPROPERTY(EditAnywhere, Category = Crosshairs)
+	UTexture2D* CrosshairsCenter;
+
+	UPROPERTY(EditAnywhere, Category = Crosshairs)
+	UTexture2D* CrosshairsLeft;
+
+	UPROPERTY(EditAnywhere, Category = Crosshairs)
+	UTexture2D* CrosshairsRight;
+
+	UPROPERTY(EditAnywhere, Category = Crosshairs)
+	UTexture2D* CrosshairsTop;
+
+	UPROPERTY(EditAnywhere, Category = Crosshairs)
+	UTexture2D* CrosshairsBottom;
 public:
 	void SetWeaponState(EWeaponState State);
 	FORCEINLINE USphereComponent* GetAreaSphere() const { return AreaSphere; }
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
-
+	FORCEINLINE UTexture2D* GetCenterCrosshair() const { return CrosshairsCenter; }
+	FORCEINLINE UTexture2D* GetLeftCrosshair() const { return CrosshairsLeft; }
+	FORCEINLINE UTexture2D* GetRightCrosshair() const { return CrosshairsRight; }
+	FORCEINLINE UTexture2D* GetTopCrosshair() const { return CrosshairsTop; }
+	FORCEINLINE UTexture2D* GetBottomCrosshair() const { return CrosshairsBottom; }
 };

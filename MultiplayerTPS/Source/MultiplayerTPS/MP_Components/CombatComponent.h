@@ -7,6 +7,9 @@
 #include "CombatComponent.generated.h"
 
 class AWeapon;
+class AMP_Character;
+class AMP_PlayerController;
+class AMP_HUD;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class MULTIPLAYERTPS_API UCombatComponent : public UActorComponent
@@ -40,10 +43,15 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastFire(const FVector_NetQuantize& TraceHitTarget);
 
-	//计算屏幕中心命中结果
+	// 计算屏幕中心命中结果
 	void TraceUnderCrosshairs(FHitResult& TraceHitResult);
+
+	// 设置屏幕准心
+	void SetHUDCrosshairs(float DeltaTime);
 private:
-	class AMP_Character* Character;
+	AMP_Character* Character;
+	AMP_PlayerController* Controller;
+	AMP_HUD* HUD;
 
 	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
 	AWeapon* EquippedWeapon;

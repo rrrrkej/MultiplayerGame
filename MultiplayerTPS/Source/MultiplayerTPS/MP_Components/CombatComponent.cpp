@@ -11,6 +11,8 @@
 #include "MultiplayerTPS/DebugHeader.h"
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
+#include "MultiplayerTPS/PlayerController/MP_PlayerController.h"
+#include "MultiplayerTPS/UserWidget/MP_HUD.h"
 
 #define TRACE_LENGTH 8000;
 UCombatComponent::UCombatComponent():
@@ -42,6 +44,40 @@ void UCombatComponent::BeginPlay()
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	SetHUDCrosshairs(DeltaTime);
+}
+
+void UCombatComponent::SetHUDCrosshairs(float DeltaTime)
+{
+	if (Character == nullptr || Character->Controller == nullptr) return;
+
+	Controller = Controller == nullptr ? Cast<AMP_PlayerController>(Character->Controller) : Controller;
+
+	if (Controller)
+	{
+		HUD = HUD == nullptr ? Cast<AMP_HUD>(Controller->GetHUD()) : HUD;
+		if (HUD)
+		{
+			FCrosshairPackage CrosshairPackage;
+			if (EquippedWeapon)
+			{
+				CrosshairPackage.CrosshairCenter = EquippedWeapon->GetCenterCrosshair();
+				CrosshairPackage.CrosshairLeft = EquippedWeapon->GetLeftCrosshair();
+				CrosshairPackage.CrosshairRight = EquippedWeapon->GetRightCrosshair();
+				CrosshairPackage.CrosshairTop = EquippedWeapon->GetTopCrosshair();
+				CrosshairPackage.CrosshairButtom = EquippedWeapon->GetBottomCrosshair();
+			}
+			else
+			{
+				CrosshairPackage.CrosshairCenter = nullptr;
+				CrosshairPackage.CrosshairLeft = nullptr;
+				CrosshairPackage.CrosshairRight = nullptr;
+				CrosshairPackage.CrosshairTop = nullptr;
+				CrosshairPackage.CrosshairButtom = nullptr;
+			}
+			HUD->SetCrosshairPackage(CrosshairPackage);
+		}
+	}
 }
 
 void UCombatComponent::SetAiming(bool bIsAiming)
