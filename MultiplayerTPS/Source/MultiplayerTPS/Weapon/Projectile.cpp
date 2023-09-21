@@ -8,6 +8,8 @@
 #include "Particles/ParticleSystem.h"
 #include "particles/ParticleSystemComponent.h"
 #include "Sound/SoundCue.h"
+#include "MultiplayerTPS/Character/MP_Character.h"
+#include "MultiplayerTPS/MultiplayerTPS.h"
 
 AProjectile::AProjectile()
 {
@@ -22,6 +24,7 @@ AProjectile::AProjectile()
 	CollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Block);
+	CollisionBox->SetCollisionResponseToChannel(ECC_SkeletalMesh, ECollisionResponse::ECR_Block);
 
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
 	ProjectileMovementComponent->bRotationFollowsVelocity = true;
@@ -70,8 +73,15 @@ void AProjectile::BeginPlay()
 	}
 }
 
+// ·þÎñÆ÷¶ËÖ´ÐÐ
 void AProjectile::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
+	AMP_Character* MP_Character = Cast<AMP_Character>(OtherActor);
+	if (MP_Character)
+	{
+		MP_Character->MulticastHit();
+	}
+
 	Destroy();
 }
 

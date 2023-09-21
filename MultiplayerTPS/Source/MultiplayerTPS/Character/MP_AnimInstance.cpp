@@ -50,7 +50,8 @@ void UMP_AnimInstance::NativeUpdateAnimation(float DeltaTime)
 
 	//Update TurningInPlace
 	TurningInPlace = MP_Character->GetTurningInPlace();
-	
+	bRotateRootBone = MP_Character->ShouldRotateRootBone();
+
 	//Update YawOffset
 	FRotator AimRotation = MP_Character->GetBaseAimRotation();//this founction return the world rotation of controller
 	FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(MP_Character->GetVelocity());//this founction return the world rotation of argument

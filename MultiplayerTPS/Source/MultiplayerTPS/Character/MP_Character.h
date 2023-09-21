@@ -31,11 +31,15 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
+	virtual void OnRep_ReplicatedMovement() override;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	void AimOffset(float DeltaTime);
+	void CalculateAO_Pitch();
+	// fix TurnInPlace anim in Simulated Proxies
+	void SimuProxiesTurn();
 private:
 
 	UPROPERTY(VisibleAnywhere, Category = Camera)
@@ -65,7 +69,7 @@ private:
 	float AO_Pitch;
 	FRotator StartingAimRotation;
 
-	//Turning in place
+	//Turning in place, Used as a condition for changing animation states in AnimBlueprint
 	ETurningInPlace TurningInPlace;
 	void TurnInPlace(float DeltaTime);
 
@@ -74,13 +78,28 @@ private:
 	UPROPERTY(EditAnywhere)
 	float CameraThreshold = 200.f;
 
+	bool bRotateRootBone;
+	float TurnThreshold = 2.f;
+	FRotator ProxyRotationLastFrame;
+	FRotator ProxyRotation;
+	float ProxyYaw;
+	float TimeSinceLastMovementReplication;
+	float CalculateSpeed();
+
 #pragma region AnimMontage
 private:
 	UPROPERTY(EditAnywhere, Category = AnimMontage)
 	UAnimMontage* FireWeaponMontage;
 
+	UPROPERTY(EditAnywhere, Category = AnimMontage)
+	UAnimMontage* HitReactMontage;
+
 public:
 	void PlayFireMontage(bool bAiming);
+	void PlayHitReactMontage();
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastHit();
 #pragma endregion
 
 #pragma region InputBinding
@@ -155,4 +174,5 @@ public:
 	AWeapon* GetEquippedWeapon();
 	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; }
 	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+	FORCEINLINE bool ShouldRotateRootBone() const { return bRotateRootBone; }
 };
