@@ -51,6 +51,7 @@ AMP_Character::AMP_Character()
 	//Set Camera block
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 
 	//Set Network properties
 	NetUpdateFrequency = 66.f;
@@ -87,7 +88,7 @@ void AMP_Character::Tick(float DeltaTime)
 
 	AimOffset(DeltaTime);
 
-	
+	HideCamera();
 }
 
 // Called when the game starts or when spawned
@@ -167,6 +168,28 @@ void AMP_Character::TurnInPlace(float DeltaTime)
 	}
 }
 
+void AMP_Character::HideCamera()
+{
+	if (!IsLocallyControlled()) return;
+	if ((FollowCamera->GetComponentLocation() - GetActorLocation()).Size() < CameraThreshold)
+	{
+		GetMesh()->SetVisibility(false);
+		if (CombatComponent && CombatComponent->EquippedWeapon && CombatComponent->EquippedWeapon->GetWeaponMesh())
+		{
+			CombatComponent->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = true;
+		}
+
+	}
+	else
+	{
+		GetMesh()->SetVisibility(true);
+		if (CombatComponent && CombatComponent->EquippedWeapon && CombatComponent->EquippedWeapon->GetWeaponMesh())
+		{
+			CombatComponent->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = false;
+		}
+	}
+}
+
 void AMP_Character::PlayFireMontage(bool bAiming)
 {
 	if (CombatComponent == nullptr || CombatComponent->EquippedWeapon == nullptr) return;
@@ -232,13 +255,23 @@ bool AMP_Character::IsAiming()
 {
 	return (CombatComponent && CombatComponent->bAiming);
 }
-#pragma region Public Getter and Setter
 
 AWeapon* AMP_Character::GetEquippedWeapon()
 {
 	if (CombatComponent == nullptr) return nullptr;
 	return CombatComponent->EquippedWeapon;
 }
+
+FVector AMP_Character::GetHitTarget() const
+{
+
+	if (CombatComponent == nullptr) return FVector();
+	return CombatComponent->HitTarget;
+}
+
+#pragma region Public Getter and Setter
+
+
 
 #pragma endregion
 

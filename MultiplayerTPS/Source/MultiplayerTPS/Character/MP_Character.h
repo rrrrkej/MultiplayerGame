@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "MultiplayerTPS/Types/TurningInPlace.h"
+#include "MultiplayerTPS/Interfaces/InteractWithCrosshairsInterface.h"
 #include "MP_Character.generated.h"
 
 class USpringArmComponent;
@@ -16,7 +17,7 @@ class UCombatComponent;
 class UAnimMontage;
 
 UCLASS()
-class MULTIPLAYERTPS_API AMP_Character : public ACharacter
+class MULTIPLAYERTPS_API AMP_Character : public ACharacter, public IInteractWithCrosshairsInterface
 {
 	GENERATED_BODY()
 
@@ -67,6 +68,11 @@ private:
 	//Turning in place
 	ETurningInPlace TurningInPlace;
 	void TurnInPlace(float DeltaTime);
+
+	// Hide Camera if character get too close to camera
+	void HideCamera();
+	UPROPERTY(EditAnywhere)
+	float CameraThreshold = 200.f;
 
 #pragma region AnimMontage
 private:
@@ -135,16 +141,18 @@ protected:
 #pragma endregion
 
 public:	
-	//Access Weapon class
+	//be accessed by Weapon class
 	void SetOverlappingWeapon(AWeapon* Weapon);
 
-	//Access CombatComponent class
+	//be accessed by CombatComponent class
 	bool IsWeaponEquipped();
 	bool IsAiming();
+	FVector GetHitTarget() const;
 
 	// be accessed by AnimInstance class
 	FORCEINLINE float GetAO_Yaw() const { return AO_Yaw; }
 	FORCEINLINE float GetAO_Pitch() const { return AO_Pitch; }
 	AWeapon* GetEquippedWeapon();
 	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; }
+	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 };
