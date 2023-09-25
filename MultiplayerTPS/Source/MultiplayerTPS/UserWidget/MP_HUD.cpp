@@ -3,6 +3,26 @@
 
 #include "MP_HUD.h"
 #include "MultiplayerTPS/DebugHeader.h"
+#include "GameFramework/PlayerController.h"
+#include "CharacterOverlay.h"
+
+void AMP_HUD::BeginPlay()
+{
+	Super::BeginPlay();
+
+	AddCharacterOverlay();
+}
+
+void AMP_HUD::AddCharacterOverlay()
+{
+	APlayerController* PlayerController = GetOwningPlayerController();
+	if (PlayerController && CharacterOverlayClass)
+	{
+		CharacterOverlay = CreateWidget<UCharacterOverlay>(PlayerController, CharacterOverlayClass);
+		CharacterOverlay->AddToViewport();
+
+	}
+}
 
 void AMP_HUD::DrawHUD()
 {

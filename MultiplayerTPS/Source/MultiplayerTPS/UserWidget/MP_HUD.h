@@ -7,6 +7,8 @@
 #include "MP_HUD.generated.h"
 
 class UTexture2D;
+class UCharacterOverlay;
+class UUserWidget;
 
 USTRUCT(BlueprintType)
 struct FCrosshairPackage
@@ -32,6 +34,16 @@ class MULTIPLAYERTPS_API AMP_HUD : public AHUD
 
 public:
 	virtual void DrawHUD() override;
+
+	UPROPERTY(EditAnywhere, Category = "Player Stats")
+	TSubclassOf<UUserWidget> CharacterOverlayClass;
+
+	UCharacterOverlay* CharacterOverlay;
+
+protected:
+	virtual void BeginPlay() override;
+
+	void AddCharacterOverlay();
 
 private:
 	FCrosshairPackage CrosshairPackage;

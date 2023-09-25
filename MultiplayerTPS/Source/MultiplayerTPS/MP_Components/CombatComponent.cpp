@@ -13,11 +13,13 @@
 #include "DrawDebugHelpers.h"
 #include "MultiplayerTPS/PlayerController/MP_PlayerController.h"
 #include "Camera/CameraComponent.h"
+#include "TimerManager.h"
 
 #define TRACE_LENGTH 8000;
 UCombatComponent::UCombatComponent():
 	BaseWalkSpeed(600.f),
-	AimWalkSpeed(450.f)
+	AimWalkSpeed(450.f),
+	bCanFire(true)
 {
 	PrimaryComponentTick.bCanEverTick = true;
 
@@ -60,7 +62,6 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 		SetHUDCrosshairs(DeltaTime);
 		InterpFOV(DeltaTime);
 	}
-	
 }
 
 //Called in this::TickComponent()
@@ -150,51 +151,6 @@ void UCombatComponent::InterpFOV(float DeltaTime)
 	}
 }
 
-void UCombatComponent::SetAiming(bool bIsAiming)
-{
-	bAiming = bIsAiming;
-	ServerSetAiming(bIsAiming);
-	if (Character)
-	{
-		Character->GetCharacterMovement()->MaxWalkSpeed = bIsAiming ? AimWalkSpeed : BaseWalkSpeed;
-	}
-}
-
-void UCombatComponent::ServerSetAiming_Implementation(bool bIsAiming)
-{
-	bAiming = bIsAiming;
-	if (Character)
-	{
-		Character->GetCharacterMovement()->MaxWalkSpeed = bIsAiming ? AimWalkSpeed : BaseWalkSpeed;
-	}
-}
-
-//ÓµÓÐÎäÆ÷Ê±ÇÐ»»ÐÐ¶¯×´Ì¬
-void UCombatComponent::OnRep_EquippedWeapon()
-{
-	if (EquippedWeapon && Character)
-	{
-		Character->GetCharacterMovement()->bOrientRotationToMovement = false;
-		Character->bUseControllerRotationYaw = true;
-	}
-}
-
-void UCombatComponent::FireButtonressed(bool bPressed)
-{
-	bFireButtonPressed = bPressed;
-	if (bFireButtonPressed)
-	{
-		FHitResult HitResult;
-		TraceUnderCrosshairs(HitResult);
-		ServerFire(HitResult.ImpactPoint);
-
-		if (EquippedWeapon)
-		{
-			CrosshairShootingFactor = 0.75f;
-		}
-	}
-}
-
 void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
 {
 	FVector2D ViewportSize;
@@ -247,6 +203,71 @@ void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
 	}
 }
 
+void UCombatComponent::SetAiming(bool bIsAiming)
+{
+	bAiming = bIsAiming;
+	ServerSetAiming(bIsAiming);
+	if (Character)
+	{
+		Character->GetCharacterMovement()->MaxWalkSpeed = bIsAiming ? AimWalkSpeed : BaseWalkSpeed;
+	}
+}
+
+void UCombatComponent::ServerSetAiming_Implementation(bool bIsAiming)
+{
+	bAiming = bIsAiming;
+	if (Character)
+	{
+		Character->GetCharacterMovement()->MaxWalkSpeed = bIsAiming ? AimWalkSpeed : BaseWalkSpeed;
+	}
+}
+
+void UCombatComponent::FireButtonpressed(bool bPressed)
+{
+	if (!bPressed)
+	{
+		bCanFire = true;
+	}
+	bFireButtonPressed = bPressed;
+
+	if (bFireButtonPressed && bCanFire)
+	{
+		Fire();
+	}
+}
+
+void UCombatComponent::Fire()
+{
+	bCanFire = false;
+	ServerFire(HitTarget);
+	if (EquippedWeapon)
+	{
+		CrosshairShootingFactor = 0.75f;
+	}
+	StartFireTimer();
+}
+
+void UCombatComponent::StartFireTimer()
+{
+	if (EquippedWeapon == nullptr || Character == nullptr) return;
+	Character->GetWorldTimerManager().SetTimer(
+		FireTimer,
+		this,
+		&ThisClass::FireTimerFinished,
+		EquippedWeapon->FireDelay
+	);
+}
+
+void UCombatComponent::FireTimerFinished()
+{
+	if (EquippedWeapon == nullptr) return;
+	if (bFireButtonPressed && EquippedWeapon->bAutomatic)
+	{
+		bCanFire = true;
+		Fire();
+	}
+}
+
 void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
 {
 	MulticastFire(TraceHitTarget);
@@ -277,5 +298,15 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 	EquippedWeapon->SetOwner(Character);
 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 	Character->bUseControllerRotationYaw = true;
+}
+
+//ÓµÓÐÎäÆ÷Ê±ÇÐ»»ÐÐ¶¯×´Ì¬
+void UCombatComponent::OnRep_EquippedWeapon()
+{
+	if (EquippedWeapon && Character)
+	{
+		Character->GetCharacterMovement()->bOrientRotationToMovement = false;
+		Character->bUseControllerRotationYaw = true;
+	}
 }
 

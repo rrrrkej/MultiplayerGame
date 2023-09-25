@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "MP_PlayerController.generated.h"
 
+class AMP_HUD;
 /**
  * 
  */
@@ -14,4 +15,12 @@ class MULTIPLAYERTPS_API AMP_PlayerController : public APlayerController
 {
 	GENERATED_BODY()
 	
+public:
+	void SetHUDHealth(float Health, float MaxHealth);
+
+protected:
+	virtual void BeginPlay() override;
+
+private:
+	AMP_HUD* MP_HUD;
 };

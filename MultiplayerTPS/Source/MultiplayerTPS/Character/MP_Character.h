@@ -15,6 +15,8 @@ class UWidgetComponent;
 class AWeapon;
 class UCombatComponent;
 class UAnimMontage;
+class AMP_PlayerController;
+class AController;
 
 UCLASS()
 class MULTIPLAYERTPS_API AMP_Character : public ACharacter, public IInteractWithCrosshairsInterface
@@ -40,6 +42,11 @@ protected:
 	void CalculateAO_Pitch();
 	// fix TurnInPlace anim in Simulated Proxies
 	void SimuProxiesTurn();
+	
+	UFUNCTION()
+	void ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser);
+	void UpdateHUDHealth();
+
 private:
 
 	UPROPERTY(VisibleAnywhere, Category = Camera)
@@ -86,6 +93,20 @@ private:
 	float TimeSinceLastMovementReplication;
 	float CalculateSpeed();
 
+	/**
+	* Player health
+	*/
+	UPROPERTY(EditAnywhere, Category = "Player Stats")
+	float MaxHealth = 100;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Health, VisibleAnywhere, Category = "Player Stats")
+	float Health = 100.f;
+
+	UFUNCTION()
+	void OnRep_Health();
+
+	AMP_PlayerController* MP_PlayerController;
+
 #pragma region AnimMontage
 private:
 	UPROPERTY(EditAnywhere, Category = AnimMontage)
@@ -98,8 +119,6 @@ public:
 	void PlayFireMontage(bool bAiming);
 	void PlayHitReactMontage();
 
-	UFUNCTION(NetMulticast, Unreliable)
-	void MulticastHit();
 #pragma endregion
 
 #pragma region InputBinding

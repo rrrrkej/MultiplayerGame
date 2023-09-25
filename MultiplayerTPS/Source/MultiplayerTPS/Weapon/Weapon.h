@@ -106,6 +106,15 @@ private:
 	float ZoomInterpSpeed = 20.f;
 
 public:
+	/**
+	* Automatic fire
+	*/
+	UPROPERTY(EditAnywhere, Category = Combat)
+	float FireDelay = 0.15f;
+	UPROPERTY(EditAnywhere, Category = Combat)
+	bool bAutomatic = true;
+
+public:
 	void SetWeaponState(EWeaponState State);
 	FORCEINLINE USphereComponent* GetAreaSphere() const { return AreaSphere; }
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }

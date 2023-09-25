@@ -16,6 +16,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "MultiplayerTPS/Character/MP_AnimInstance.h"
 #include "MultiplayerTPS/MultiplayerTPS.h"
+#include "MultiplayerTPS/PlayerController/MP_PlayerController.h"
 
 // Sets default values
 AMP_Character::AMP_Character()
@@ -69,9 +70,9 @@ void AMP_Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 
 	// 在AMP_Character的生命周期内，如果OverlappingWeapon的值发生了变化，服务器会发送到每一个客户端
 	//DOREPLIFETIME(AMP_Character, OverlappingWeapon);
-
 	// 条件发送
 	DOREPLIFETIME_CONDITION(AMP_Character, OverlappingWeapon, COND_OwnerOnly);
+	DOREPLIFETIME(AMP_Character, Health);
 }
 
 void AMP_Character::PostInitializeComponents()
@@ -117,13 +118,22 @@ void AMP_Character::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	//Add Input Mapping Context
+	// Add Input Mapping Context
 	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
+	}
+
+	// Initialzied properties in HUD
+	UpdateHUDHealth();
+
+	// Bind event in server
+	if (HasAuthority())
+	{
+		OnTakeAnyDamage.AddDynamic(this, &AMP_Character::ReceiveDamage);
 	}
 }
 
@@ -164,6 +174,21 @@ float AMP_Character::CalculateSpeed()
 	FVector Velocity = GetVelocity();
 	Velocity.Z = 0.f;
 	return Velocity.Size();
+}
+
+void AMP_Character::OnRep_Health()
+{
+	PlayHitReactMontage();
+	UpdateHUDHealth();
+}
+
+void AMP_Character::UpdateHUDHealth()
+{
+	MP_PlayerController = MP_PlayerController == nullptr ? Cast<AMP_PlayerController>(Controller) : MP_PlayerController;
+	if (MP_PlayerController)
+	{
+		MP_PlayerController->SetHUDHealth(Health, MaxHealth);
+	}
 }
 
 void AMP_Character::CalculateAO_Pitch()
@@ -212,6 +237,13 @@ void AMP_Character::SimuProxiesTurn()
 		return;
 	}
 	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+}
+
+void AMP_Character::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
+{
+	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
+	UpdateHUDHealth();
+	PlayHitReactMontage();
 }
 
 void AMP_Character::TurnInPlace(float DeltaTime)
@@ -283,11 +315,6 @@ void AMP_Character::PlayHitReactMontage()
 		FName SectionName("FromFront");
 		AnimInstance->Montage_JumpToSection(SectionName);
 	}
-}
-
-void AMP_Character::MulticastHit_Implementation()
-{
-	PlayHitReactMontage();
 }
 
 //called by server
@@ -493,10 +520,9 @@ void AMP_Character::EndAim(const FInputActionValue& Value)
 void AMP_Character::Fire(const FInputActionValue& Value)
 {
 	bool bFire = Value.Get<bool>();
-	if (CombatComponent)
+	if (CombatComponent && CombatComponent->EquippedWeapon)
 	{
-		//目前存在问题，按住鼠标会不停的执行
-		CombatComponent->FireButtonressed(bFire);
+		CombatComponent->FireButtonpressed(bFire);
 	}
 }
 
@@ -505,7 +531,7 @@ void AMP_Character::EndFire(const FInputActionValue& Value)
 	bool bFire = Value.Get<bool>();
 	if (CombatComponent)
 	{
-		CombatComponent->FireButtonressed(bFire);
+		CombatComponent->FireButtonpressed(bFire);
 	}
 }
 
