@@ -34,6 +34,10 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
 	virtual void OnRep_ReplicatedMovement() override;
+	// Handle what happens when the player gets eliminated
+	void Elim();
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastElim();
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -94,7 +98,7 @@ private:
 	float CalculateSpeed();
 
 	/**
-	* Player health
+	* Character health
 	*/
 	UPROPERTY(EditAnywhere, Category = "Player Stats")
 	float MaxHealth = 100;
@@ -107,6 +111,18 @@ private:
 
 	AMP_PlayerController* MP_PlayerController;
 
+	bool bElimmed = false;
+
+	/**
+	* Timerhandle of RespawnCharacter
+	*/
+	FTimerHandle ElimTimer;
+
+	UPROPERTY(EditDefaultsOnly)
+	float ElimDelay = 3;
+
+	void ElimTimerFinished();
+
 #pragma region AnimMontage
 private:
 	UPROPERTY(EditAnywhere, Category = AnimMontage)
@@ -115,10 +131,12 @@ private:
 	UPROPERTY(EditAnywhere, Category = AnimMontage)
 	UAnimMontage* HitReactMontage;
 
+	UPROPERTY(EditAnywhere, Category = AnimMontage)
+	UAnimMontage* ElimMontage;
 public:
 	void PlayFireMontage(bool bAiming);
 	void PlayHitReactMontage();
-
+	void PlayElimMontage();
 #pragma endregion
 
 #pragma region InputBinding
@@ -194,4 +212,5 @@ public:
 	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; }
 	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	FORCEINLINE bool ShouldRotateRootBone() const { return bRotateRootBone; }
+	FORCEINLINE bool IsElimmed() const { return bElimmed; }
 };

@@ -17,6 +17,8 @@
 #include "MultiplayerTPS/Character/MP_AnimInstance.h"
 #include "MultiplayerTPS/MultiplayerTPS.h"
 #include "MultiplayerTPS/PlayerController/MP_PlayerController.h"
+#include "MultiplayerTPS/GameMode/MP_GameMode.h"
+#include "Timermanager.h"
 
 // Sets default values
 AMP_Character::AMP_Character()
@@ -89,6 +91,32 @@ void AMP_Character::OnRep_ReplicatedMovement()
 	Super::OnRep_ReplicatedMovement();
 	SimuProxiesTurn();
 	TimeSinceLastMovementReplication = 0.f;
+}
+
+void AMP_Character::Elim()
+{
+	MulticastElim();
+	GetWorldTimerManager().SetTimer(
+		ElimTimer, 
+		this, 
+		&AMP_Character::ElimTimerFinished, 
+		ElimDelay
+		);
+}
+
+void AMP_Character::MulticastElim_Implementation()
+{
+	bElimmed = true;
+	PlayElimMontage();
+}
+
+void AMP_Character::ElimTimerFinished()
+{
+	AMP_GameMode* MP_GameMode = GetWorld()->GetAuthGameMode<AMP_GameMode>();
+	if (MP_GameMode)
+	{
+		MP_GameMode->RequestRespawn(this, Controller);
+	}
 }
 
 // Called every frame
@@ -244,6 +272,18 @@ void AMP_Character::ReceiveDamage(AActor* DamagedActor, float Damage, const UDam
 	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
 	UpdateHUDHealth();
 	PlayHitReactMontage();
+
+	if (Health == 0.f)
+	{
+		AMP_GameMode* MP_GameMode = GetWorld()->GetAuthGameMode<AMP_GameMode>();
+		if (MP_GameMode)
+		{
+			MP_PlayerController = MP_PlayerController == nullptr ? Cast<AMP_PlayerController>(Controller) : MP_PlayerController;
+			AMP_PlayerController* AttackerController = Cast<AMP_PlayerController>(InstigatorController);
+			MP_GameMode->PlayerEliminated(this, MP_PlayerController, AttackerController);
+		}
+	}
+	
 }
 
 void AMP_Character::TurnInPlace(float DeltaTime)
@@ -314,6 +354,15 @@ void AMP_Character::PlayHitReactMontage()
 		AnimInstance->Montage_Play(FireWeaponMontage);
 		FName SectionName("FromFront");
 		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+}
+
+void AMP_Character::PlayElimMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && ElimMontage)
+	{
+		AnimInstance->Montage_Play(ElimMontage);
 	}
 }
 
