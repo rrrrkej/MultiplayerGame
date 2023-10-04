@@ -21,6 +21,8 @@ class UWidgetComponent;
 class UAnimationAsset;
 class ACasing;
 class UTexture2D;
+class AMP_Character;
+class AMP_PlayerController;
 
 UCLASS()
 class MULTIPLAYERTPS_API AWeapon : public AActor
@@ -34,11 +36,15 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void OnRep_Owner() override;
+	void SetHUDAmmo();
 	void ShowPickupWidget(bool bShowWidget);
 	//Play Fire animation
 	virtual void Fire(const FVector& HitTarget);
 	// Drop weapon
 	void Dropped();
+
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -106,6 +112,23 @@ private:
 	float ZoomedFOV = 30.f;
 	UPROPERTY(EditAnywhere)
 	float ZoomInterpSpeed = 20.f;
+
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_Ammo, Category = Combat)
+	int32 Ammo;
+
+	UFUNCTION()
+	void OnRep_Ammo();
+
+	// Round means bullet, Ammo amount minuse 1
+	void SpendRound();
+
+	UPROPERTY(EditAnywhere, Category = Combat)
+	int32 MagCapcity;
+
+	UPROPERTY()
+	AMP_Character* OwnerCharacter;
+	UPROPERTY()
+	AMP_PlayerController* OwnerPlayerController;
 
 public:
 	/**

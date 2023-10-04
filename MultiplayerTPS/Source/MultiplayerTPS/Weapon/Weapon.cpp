@@ -11,6 +11,8 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Casing.h"
 #include "Engine/SkeletalMeshSocket.h"
+#include "MultiplayerTPS/PlayerController/MP_PlayerController.h"
+#include "MultiplayerTPS/DebugHeader.h"
 
 // Sets default values
 AWeapon::AWeapon()
@@ -70,6 +72,7 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AWeapon, WeaponState);
+	DOREPLIFETIME(AWeapon, Ammo);
 }
 
 // Bind delegate with AreaSphere
@@ -117,6 +120,47 @@ void AWeapon::OnRep_WeaponState()
 
 	default:
 		break;
+	}
+}
+
+void AWeapon::SpendRound()
+{
+	Ammo--;
+	SetHUDAmmo();
+	DebugHeader::Print(FString::FromInt(Ammo), FColor::Blue);
+}
+
+void AWeapon::OnRep_Ammo()
+{
+	OwnerCharacter = OwnerCharacter == nullptr ? Cast<AMP_Character>(GetOwner()) : OwnerCharacter;
+	SetHUDAmmo();
+}
+
+void AWeapon::OnRep_Owner()
+{
+	Super::OnRep_Owner();
+	
+	if (Owner == nullptr)
+	{
+		OwnerCharacter = nullptr;
+		OwnerPlayerController = nullptr;
+	}
+	else
+	{
+		SetHUDAmmo();
+	}
+}
+
+void AWeapon::SetHUDAmmo()
+{
+	OwnerCharacter = OwnerCharacter == nullptr ? Cast<AMP_Character>(GetOwner()) : OwnerCharacter;
+	if (OwnerCharacter)
+	{
+		OwnerPlayerController = OwnerPlayerController == nullptr ? Cast<AMP_PlayerController>(OwnerCharacter->Controller) : OwnerPlayerController;
+		if (OwnerPlayerController)
+		{
+			OwnerPlayerController->SetHUDWeaponAmmo(Ammo);
+		}
 	}
 }
 
@@ -187,6 +231,7 @@ void AWeapon::Fire(const FVector& HitTarget)
 			}
 		}
 	}
+	SpendRound();
 }
 
 void AWeapon::Dropped()
@@ -195,5 +240,7 @@ void AWeapon::Dropped()
 	FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld, true);
 	WeaponMesh->DetachFromComponent(DetachRules);
 	SetOwner(nullptr);
+	OwnerCharacter = nullptr;
+	OwnerPlayerController = nullptr;
 }
 

@@ -14,10 +14,15 @@ void AMP_GameMode::PlayerEliminated(AMP_Character* ElimmedCharacter, AMP_PlayerC
 	AMP_PlayerState* AttackerPlayerState = AttackerController ? Cast<AMP_PlayerState>(AttackerController->PlayerState) : nullptr;
 	AMP_PlayerState* VictimPlayerState = VictimController ? Cast<AMP_PlayerState>(VictimController->PlayerState) : nullptr;
 
-	// Add Score to AttackerState
+	// Update AttackerPlayerState
 	if(AttackerPlayerState && AttackerPlayerState != VictimPlayerState)
 	{
 		AttackerPlayerState->AddToScore(1.f);
+	}
+	// Update VictimPlayerState
+	if (VictimPlayerState)
+	{
+		VictimPlayerState->AddToDefeats(1);
 	}
 
 	// Elim victim character

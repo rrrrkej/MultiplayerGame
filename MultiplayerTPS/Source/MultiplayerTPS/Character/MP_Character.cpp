@@ -130,6 +130,10 @@ void AMP_Character::Destroyed()
 
 void AMP_Character::MulticastElim_Implementation()
 {
+	if (MP_PlayerController)
+	{
+		MP_PlayerController->SetHUDWeaponAmmo(0);
+	}
 	bElimmed = true;
 	PlayElimMontage();
 
@@ -241,6 +245,7 @@ void AMP_Character::PollInit()
 		if (MP_PlayerState)
 		{
 			MP_PlayerState->AddToScore(0.f);
+			MP_PlayerState->AddToDefeats(0);
 		}
 	}
 }

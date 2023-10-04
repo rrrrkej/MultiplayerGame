@@ -162,6 +162,7 @@ private:
 	UPROPERTY(EditAnywhere)
 	USoundCue* ElimBotSound;
 
+	UPROPERTY()
 	AMP_PlayerState* MP_PlayerState;
 #pragma region AnimMontage
 private:

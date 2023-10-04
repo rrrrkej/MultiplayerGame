@@ -59,4 +59,32 @@ void AMP_PlayerController::SetHUDScore(float Score)
 	}
 }
 
+void AMP_PlayerController::SetHUDDefeats(int32 Defeats)
+{
+	MP_HUD = MP_HUD == nullptr ? Cast<AMP_HUD>(GetHUD()) : MP_HUD;
+	bool bHUDValid = MP_HUD &&
+		MP_HUD->CharacterOverlay &&
+		MP_HUD->CharacterOverlay->DefeatsAmount;
+
+	if (bHUDValid)
+	{
+		FString DefeatsText = FString::Printf(TEXT("%d"), Defeats);
+		MP_HUD->CharacterOverlay->DefeatsAmount->SetText(FText::FromString(DefeatsText));
+	}
+}
+
+void AMP_PlayerController::SetHUDWeaponAmmo(int32 Ammo)
+{
+	MP_HUD = MP_HUD == nullptr ? Cast<AMP_HUD>(GetHUD()) : MP_HUD;
+	bool bHUDValid = MP_HUD &&
+		MP_HUD->CharacterOverlay &&
+		MP_HUD->CharacterOverlay->WeaponAmmoAmount;
+
+	if (bHUDValid)
+	{
+		FString AmmoText = FString::Printf(TEXT("%d"), Ammo);
+		MP_HUD->CharacterOverlay->WeaponAmmoAmount->SetText(FText::FromString(AmmoText));
+	}
+}
+
 

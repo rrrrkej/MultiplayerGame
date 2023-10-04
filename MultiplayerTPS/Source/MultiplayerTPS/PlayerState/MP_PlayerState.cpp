@@ -4,6 +4,28 @@
 #include "MP_PlayerState.h"
 #include "MultiplayerTPS/Character/MP_Character.h"
 #include "MultiplayerTPS/PlayerController/MP_PlayerController.h"
+#include "Net/UnrealNetwork.h"
+
+void AMP_PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AMP_PlayerState, Defeats);
+}
+
+void AMP_PlayerState::AddToScore(float ScoreAmount)
+{
+	SetScore(GetScore() + ScoreAmount);
+	Character = Character == nullptr ? Cast<AMP_Character>(GetPawn()) : Character;
+	if (Character)
+	{
+		Controller = Controller == nullptr ? Cast<AMP_PlayerController>(Character->Controller) : Controller;
+		if (Controller)
+		{
+			Controller->SetHUDScore(GetScore());
+		}
+	}
+}
 
 void AMP_PlayerState::OnRep_Score()
 {
@@ -15,21 +37,34 @@ void AMP_PlayerState::OnRep_Score()
 		Controller = Controller == nullptr ? Cast<AMP_PlayerController>(Character->Controller) : Controller;
 		if (Controller)
 		{
-			Controller->SetHUDScore(Score);
+			Controller->SetHUDScore(GetScore());
 		}
 	}
 }
 
-void AMP_PlayerState::AddToScore(float ScoreAmount)
+void AMP_PlayerState::AddToDefeats(int32 DefeatsAmount)
 {
-	Score += ScoreAmount;
+	Defeats += DefeatsAmount;
 	Character = Character == nullptr ? Cast<AMP_Character>(GetPawn()) : Character;
 	if (Character)
 	{
 		Controller = Controller == nullptr ? Cast<AMP_PlayerController>(Character->Controller) : Controller;
 		if (Controller)
 		{
-			Controller->SetHUDScore(Score);
+			Controller->SetHUDDefeats(Defeats);
+		}
+	}
+}
+
+void AMP_PlayerState::OnRep_Defeats()
+{
+	Character = Character == nullptr ? Cast<AMP_Character>(GetPawn()) : Character;
+	if (Character)
+	{
+		Controller = Controller == nullptr ? Cast<AMP_PlayerController>(Character->Controller) : Controller;
+		if (Controller)
+		{
+			Controller->SetHUDDefeats(Defeats);
 		}
 	}
 }
