@@ -37,6 +37,8 @@ public:
 	void ShowPickupWidget(bool bShowWidget);
 	//Play Fire animation
 	virtual void Fire(const FVector& HitTarget);
+	// Drop weapon
+	void Dropped();
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

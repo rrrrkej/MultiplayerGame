@@ -18,7 +18,6 @@ void AProjectileBullet::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherAc
 	}
 
 	
-
 	// Super called Destroy() as end.
 	Super::OnHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit);
 }

@@ -7,6 +7,7 @@
 #include "InputActionValue.h"
 #include "MultiplayerTPS/Types/TurningInPlace.h"
 #include "MultiplayerTPS/Interfaces/InteractWithCrosshairsInterface.h"
+#include "Components/TimelineComponent.h"
 #include "MP_Character.generated.h"
 
 class USpringArmComponent;
@@ -17,7 +18,8 @@ class UCombatComponent;
 class UAnimMontage;
 class AMP_PlayerController;
 class AController;
-
+class USoundCue;
+class AMP_PlayerState;
 UCLASS()
 class MULTIPLAYERTPS_API AMP_Character : public ACharacter, public IInteractWithCrosshairsInterface
 {
@@ -38,6 +40,7 @@ public:
 	void Elim();
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastElim();
+	virtual void Destroyed() override;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -51,6 +54,8 @@ protected:
 	void ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser);
 	void UpdateHUDHealth();
 
+	// Poll for any relevant classes and initizlize HUDoverlay class
+	void PollInit();
 private:
 
 	UPROPERTY(VisibleAnywhere, Category = Camera)
@@ -123,6 +128,41 @@ private:
 
 	void ElimTimerFinished();
 
+	/**
+	* Dissolve effect
+	*/
+	UPROPERTY(VisibleAnywhere)
+	UTimelineComponent* DissolveTimeline;
+	FOnTimelineFloat DissolveTrack;
+
+	UPROPERTY(EditAnywhere)
+	UCurveFloat* DissolveCurve;
+
+	UFUNCTION()
+	void UpdateDissolveMaterial(float DissolveValue);
+	void StartDissolve();
+
+	// Dynamic instance that we can change at runtime
+	UPROPERTY(VisibleAnywhere, Category = Elim)
+	UMaterialInstanceDynamic* DynamicDissolveMaterialInstance;
+
+	// Material instance set on the Blueprint, used with the dynamic material instance
+	UPROPERTY(EditAnywhere, Category = Elim)
+	UMaterialInstance* DissolveMaterialInstance;
+
+	/**
+	* Elim bot effect
+	*/
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* ElimBotEffect;
+
+	UPROPERTY(VisibleAnywhere)
+	UParticleSystemComponent* ElimBotComponent;
+
+	UPROPERTY(EditAnywhere)
+	USoundCue* ElimBotSound;
+
+	AMP_PlayerState* MP_PlayerState;
 #pragma region AnimMontage
 private:
 	UPROPERTY(EditAnywhere, Category = AnimMontage)
@@ -169,8 +209,8 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* FireAction;
-protected:
 
+protected:
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
 
@@ -213,4 +253,6 @@ public:
 	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	FORCEINLINE bool ShouldRotateRootBone() const { return bRotateRootBone; }
 	FORCEINLINE bool IsElimmed() const { return bElimmed; }
+	FORCEINLINE float GetHealth() const{ return Health; }
+	FORCEINLINE float GetMaxHealth() const{ return MaxHealth; }
 };

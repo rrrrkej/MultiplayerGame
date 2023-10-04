@@ -7,9 +7,20 @@
 #include "MultiplayerTPS/PlayerController/MP_PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerStart.h"
+#include "MultiplayerTPS/PlayerState/MP_PlayerState.h"
 
 void AMP_GameMode::PlayerEliminated(AMP_Character* ElimmedCharacter, AMP_PlayerController* VictimController, AMP_PlayerController* AttackerController)
 {
+	AMP_PlayerState* AttackerPlayerState = AttackerController ? Cast<AMP_PlayerState>(AttackerController->PlayerState) : nullptr;
+	AMP_PlayerState* VictimPlayerState = VictimController ? Cast<AMP_PlayerState>(VictimController->PlayerState) : nullptr;
+
+	// Add Score to AttackerState
+	if(AttackerPlayerState && AttackerPlayerState != VictimPlayerState)
+	{
+		AttackerPlayerState->AddToScore(1.f);
+	}
+
+	// Elim victim character
 	if (ElimmedCharacter)
 	{
 		ElimmedCharacter->Elim();

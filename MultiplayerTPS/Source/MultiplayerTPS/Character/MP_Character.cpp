@@ -19,6 +19,10 @@
 #include "MultiplayerTPS/PlayerController/MP_PlayerController.h"
 #include "MultiplayerTPS/GameMode/MP_GameMode.h"
 #include "Timermanager.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
+#include "particles/ParticleSystemComponent.h"
+#include "MultiplayerTPS/PlayerState/MP_PlayerState.h"
 
 // Sets default values
 AMP_Character::AMP_Character()
@@ -26,13 +30,16 @@ AMP_Character::AMP_Character()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	//initialize CameraBoom attribute
+	// Initialize Character setting
+	SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+	// initialize CameraBoom attribute
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(GetMesh());
 	CameraBoom->TargetArmLength = 600.f;
 	CameraBoom->bUsePawnControlRotation = true;
 
-	//initialize FollowCamera attribute
+	// initialize FollowCamera attribute
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
@@ -40,30 +47,33 @@ AMP_Character::AMP_Character()
 	bUseControllerRotationYaw = false;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 
-	//initialize overhead WidgetComponent
+	// initialize overhead WidgetComponent
 	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
 	OverheadWidget->SetupAttachment(RootComponent);
 
-	//initialize CombatComponent
+	// initialize CombatComponent
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 	CombatComponent->SetIsReplicated(true);
 
-	//Set properties in CMC
+	// Set properties in CMC
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 0.f, 720.f);
 
-	//Set Camera block
+	// Set Camera block
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 	GetMesh()->SetCollisionObjectType(ECC_SkeletalMesh);
 
-	//Set Network properties
+	// Set Network properties
 	NetUpdateFrequency = 66.f;
 	MinNetUpdateFrequency = 33.f;
 
-	//initial properties
+	// initial properties
 	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+
+	// Construct TimelineComponent
+	DissolveTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("DissolveTimelineComponent"));
 }
 
 void AMP_Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -95,6 +105,11 @@ void AMP_Character::OnRep_ReplicatedMovement()
 
 void AMP_Character::Elim()
 {
+	if (CombatComponent && CombatComponent->EquippedWeapon)
+	{
+		CombatComponent->EquippedWeapon->Dropped();
+	}
+
 	MulticastElim();
 	GetWorldTimerManager().SetTimer(
 		ElimTimer, 
@@ -104,10 +119,64 @@ void AMP_Character::Elim()
 		);
 }
 
+void AMP_Character::Destroyed()
+{
+	Super::Destroyed();
+	if (ElimBotComponent)
+	{
+		ElimBotComponent->DestroyComponent();
+	}
+}
+
 void AMP_Character::MulticastElim_Implementation()
 {
 	bElimmed = true;
 	PlayElimMontage();
+
+	// Start dissolve effect
+	if(DissolveMaterialInstance)
+	{
+		DynamicDissolveMaterialInstance = UMaterialInstanceDynamic::Create(DissolveMaterialInstance, this);
+
+		GetMesh()->SetMaterial(0, DynamicDissolveMaterialInstance);
+		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Dissolve"), 0.55f);
+		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Glow"), 100.f);
+	}
+	StartDissolve();
+
+	// Disable character movement
+	GetCharacterMovement()->DisableMovement();
+	GetCharacterMovement()->StopMovementImmediately();
+	if (MP_PlayerController)
+	{
+		DisableInput(MP_PlayerController);
+	}
+
+	// Disable collision
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	// Spawn ElimBot
+	if (ElimBotEffect)
+	{
+		FVector ElimBotSpawnPoint(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z + 200.f);
+		ElimBotComponent = 
+		UGameplayStatics::SpawnEmitterAtLocation(
+			GetWorld(),
+			ElimBotEffect,
+			ElimBotSpawnPoint,
+			GetActorRotation()
+		);
+	}
+
+	if (ElimBotSound)
+	{
+		UGameplayStatics::SpawnSoundAtLocation(
+			this,
+			ElimBotSound,
+			GetActorLocation()
+			);
+	}
 }
 
 void AMP_Character::ElimTimerFinished()
@@ -116,6 +185,28 @@ void AMP_Character::ElimTimerFinished()
 	if (MP_GameMode)
 	{
 		MP_GameMode->RequestRespawn(this, Controller);
+	}
+	if (ElimBotComponent)
+	{
+		ElimBotComponent->DestroyComponent();
+	}
+}
+
+void AMP_Character::UpdateDissolveMaterial(float DissolveValue)
+{
+	if (DynamicDissolveMaterialInstance)
+	{
+		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Dissolve"), DissolveValue);
+	}
+}
+
+void AMP_Character::StartDissolve()
+{
+	DissolveTrack.BindDynamic(this, &AMP_Character::UpdateDissolveMaterial);
+	if (DissolveCurve && DissolveTimeline)
+	{
+		DissolveTimeline->AddInterpFloat(DissolveCurve, DissolveTrack);
+		DissolveTimeline->Play();
 	}
 }
 
@@ -139,6 +230,19 @@ void AMP_Character::Tick(float DeltaTime)
 	}
 
 	HideCamera();
+	PollInit();
+}
+
+void AMP_Character::PollInit()
+{
+	if (MP_PlayerState == nullptr)
+	{
+		MP_PlayerState = GetPlayerState<AMP_PlayerState>();
+		if (MP_PlayerState)
+		{
+			MP_PlayerState->AddToScore(0.f);
+		}
+	}
 }
 
 // Called when the game starts or when spawned
@@ -346,11 +450,12 @@ void AMP_Character::PlayFireMontage(bool bAiming)
 
 void AMP_Character::PlayHitReactMontage()
 {
+	// Only play when equipped
 	if (CombatComponent == nullptr || CombatComponent->EquippedWeapon == nullptr) return;
-
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance && HitReactMontage)
 	{
+		
 		AnimInstance->Montage_Play(FireWeaponMontage);
 		FName SectionName("FromFront");
 		AnimInstance->Montage_JumpToSection(SectionName);
