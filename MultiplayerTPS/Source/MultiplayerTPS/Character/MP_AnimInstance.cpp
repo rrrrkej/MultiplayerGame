@@ -7,6 +7,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "MultiplayerTPS/DebugHeader.h"
 #include "MultiplayerTPS/Weapon/Weapon.h"
+#include "MultiplayerTPS/Types/CombatState.h"
 
 void UMP_AnimInstance::NativeInitializeAnimation()
 {
@@ -95,4 +96,7 @@ void UMP_AnimInstance::NativeUpdateAnimation(float DeltaTime)
 			RightHandRotation = FMath::RInterpTo(RightHandRotation, LookAtRotation, DeltaTime, 30.f);
 		}
 	} 
+
+	// Update bUseFABRIK
+	bUseFABRIK = MP_Character->GetCombatState() != ECombatState::ECS_Reloading;
 }

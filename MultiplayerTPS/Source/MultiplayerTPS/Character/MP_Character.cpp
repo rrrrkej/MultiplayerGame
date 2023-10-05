@@ -23,6 +23,7 @@
 #include "Sound/SoundCue.h"
 #include "particles/ParticleSystemComponent.h"
 #include "MultiplayerTPS/PlayerState/MP_PlayerState.h"
+#include "MultiplayerTPS/Weapon/WeaponTypes.h"
 
 // Sets default values
 AMP_Character::AMP_Character()
@@ -453,6 +454,29 @@ void AMP_Character::PlayFireMontage(bool bAiming)
 	}
 }
 
+void AMP_Character::PlayReloadMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && ReloadMontage)
+	{
+		AnimInstance->Montage_Play(ReloadMontage);
+		FName SectionName;
+
+		switch (CombatComponent->EquippedWeapon->GetWeaponType())
+		{
+		case EWeaponType::EWT_AssaultRifle:
+			SectionName = FName("Rifle");
+			break;
+		case EWeaponType::EWT_MAX:
+			break;
+		default:
+			break;
+		}
+
+		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+}
+
 void AMP_Character::PlayHitReactMontage()
 {
 	// Only play when equipped
@@ -534,18 +558,18 @@ AWeapon* AMP_Character::GetEquippedWeapon()
 	return CombatComponent->EquippedWeapon;
 }
 
+ECombatState AMP_Character::GetCombatState() const
+{
+	if (CombatComponent == nullptr) return ECombatState::ECS_MAX;
+	return CombatComponent->CombatState;
+}
+
 FVector AMP_Character::GetHitTarget() const
 {
 
 	if (CombatComponent == nullptr) return FVector();
 	return CombatComponent->HitTarget;
 }
-
-#pragma region Public Getter and Setter
-
-
-
-#pragma endregion
 
 #pragma region InputBinding
 // Called to bind functionality to input
@@ -577,6 +601,9 @@ void AMP_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		//Fire
 		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Triggered, this, &AMP_Character::Fire);
 		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, this, &AMP_Character::EndFire);
+
+		//Reload
+		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &AMP_Character::Reload);
 	}
 }
 
@@ -691,6 +718,15 @@ void AMP_Character::EndFire(const FInputActionValue& Value)
 	if (CombatComponent)
 	{
 		CombatComponent->FireButtonpressed(bFire);
+	}
+}
+
+void AMP_Character::Reload(const FInputActionValue& Value)
+{
+	bool bReload = Value.Get<bool>();
+	if (CombatComponent)
+	{
+		CombatComponent->Reload();
 	}
 }
 

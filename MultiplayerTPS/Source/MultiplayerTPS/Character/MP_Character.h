@@ -8,6 +8,7 @@
 #include "MultiplayerTPS/Types/TurningInPlace.h"
 #include "MultiplayerTPS/Interfaces/InteractWithCrosshairsInterface.h"
 #include "Components/TimelineComponent.h"
+#include "MultiplayerTPS/Types/CombatState.h"
 #include "MP_Character.generated.h"
 
 class USpringArmComponent;
@@ -73,7 +74,7 @@ private:
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon); 
 	
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	UCombatComponent* CombatComponent;
 
 	UFUNCTION(Server, Reliable)
@@ -164,18 +165,24 @@ private:
 
 	UPROPERTY()
 	AMP_PlayerState* MP_PlayerState;
+
 #pragma region AnimMontage
 private:
 	UPROPERTY(EditAnywhere, Category = AnimMontage)
 	UAnimMontage* FireWeaponMontage;
 
 	UPROPERTY(EditAnywhere, Category = AnimMontage)
+	UAnimMontage* ReloadMontage;
+
+	UPROPERTY(EditAnywhere, Category = AnimMontage)
 	UAnimMontage* HitReactMontage;
 
 	UPROPERTY(EditAnywhere, Category = AnimMontage)
 	UAnimMontage* ElimMontage;
+
 public:
 	void PlayFireMontage(bool bAiming);
+	void PlayReloadMontage();
 	void PlayHitReactMontage();
 	void PlayElimMontage();
 #pragma endregion
@@ -211,6 +218,9 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* FireAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* ReloadAction;
+
 protected:
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
@@ -235,6 +245,9 @@ protected:
 	void Fire(const FInputActionValue& Value);
 	void EndFire(const FInputActionValue& Value);
 
+	/* Called for Reload*/
+	void Reload(const FInputActionValue& Value);
+
 #pragma endregion
 
 public:	
@@ -256,4 +269,5 @@ public:
 	FORCEINLINE bool IsElimmed() const { return bElimmed; }
 	FORCEINLINE float GetHealth() const{ return Health; }
 	FORCEINLINE float GetMaxHealth() const{ return MaxHealth; }
+	ECombatState GetCombatState() const;
 };

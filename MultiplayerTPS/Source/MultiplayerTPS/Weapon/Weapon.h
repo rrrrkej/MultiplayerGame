@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "WeaponTypes.h"
 #include "Weapon.generated.h"
 
 UENUM(BlueprintType)
@@ -123,13 +124,15 @@ private:
 	void SpendRound();
 
 	UPROPERTY(EditAnywhere, Category = Combat)
-	int32 MagCapcity;
+	int32 MagCapacity;
 
 	UPROPERTY()
 	AMP_Character* OwnerCharacter;
 	UPROPERTY()
 	AMP_PlayerController* OwnerPlayerController;
 
+	UPROPERTY(EditAnywhere)
+	EWeaponType WeaponType;
 public:
 	/**
 	* Automatic fire
@@ -150,4 +153,6 @@ public:
 	FORCEINLINE UTexture2D* GetBottomCrosshair() const { return CrosshairsBottom; }
 	FORCEINLINE float GetZoomedFOV() const { return ZoomedFOV; }
 	FORCEINLINE float GetZoomInterpSpeed() const { return ZoomInterpSpeed; }
+	bool IsEmpty();
+	FORCEINLINE EWeaponType GetWeaponType() const { return WeaponType; }
 };

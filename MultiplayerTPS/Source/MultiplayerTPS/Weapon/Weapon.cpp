@@ -125,9 +125,8 @@ void AWeapon::OnRep_WeaponState()
 
 void AWeapon::SpendRound()
 {
-	Ammo--;
+	Ammo = FMath::Clamp(Ammo - 1, 0, MagCapacity);
 	SetHUDAmmo();
-	DebugHeader::Print(FString::FromInt(Ammo), FColor::Blue);
 }
 
 void AWeapon::OnRep_Ammo()
@@ -197,6 +196,11 @@ void AWeapon::SetWeaponState(EWeaponState State)
 	default:
 		break;
 	}
+}
+
+bool AWeapon::IsEmpty()
+{
+	return Ammo <= 0;
 }
 
 
