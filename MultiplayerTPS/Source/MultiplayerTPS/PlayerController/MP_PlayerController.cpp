@@ -16,6 +16,13 @@ void AMP_PlayerController::BeginPlay()
 
 }
 
+void AMP_PlayerController::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	SetHUDTime();
+}
+
 void AMP_PlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
@@ -101,4 +108,31 @@ void AMP_PlayerController::SetHUDCarriedAmmo(int32 Ammo)
 	}
 }
 
+void AMP_PlayerController::SetHUDMatchCountdown(float CountdownTime)
+{
+	MP_HUD = MP_HUD == nullptr ? Cast<AMP_HUD>(GetHUD()) : MP_HUD;
+	bool bHUDValid = MP_HUD &&
+		MP_HUD->CharacterOverlay &&
+		MP_HUD->CharacterOverlay->MatchCountdownText;
+
+	if (bHUDValid)
+	{
+		int32 Minutes = FMath::FloorToInt(CountdownTime / 60.f);
+		int32 Seconds = CountdownTime - Minutes * 60;
+
+		FString CountdownText = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
+		MP_HUD->CharacterOverlay->MatchCountdownText->SetText(FText::FromString(CountdownText));
+	}
+}
+
+void AMP_PlayerController::SetHUDTime()
+{
+	uint32 SecondsLeft = FMath::CeilToInt(MatchTime - GetWorld()->GetTimeSeconds());
+	if (CountdownInt != SecondsLeft)
+	{
+		SetHUDMatchCountdown(SecondsLeft);
+	}
+
+	CountdownInt = SecondsLeft;
+}
 

@@ -63,6 +63,8 @@ protected:
 	void ServerReload();
 
 	void HandleReload();
+
+	int32 AmountToReload();
 private:
 	UPROPERTY()
 	AMP_Character* Character;
@@ -119,6 +121,7 @@ private:
 	*/
 	FTimerHandle FireTimer;
 
+	// Related with Weapon::FireDelay
 	bool bCanFire;
 
 	void StartFireTimer();
@@ -145,6 +148,13 @@ private:
 
 	UFUNCTION()
 	void OnRep_CombatState();
+
+	void UpdateAmmoValues();
+	/**
+	* Equipped Weapon state
+	*/
+	bool bAutomaticFire;
+
 
 	public:
 

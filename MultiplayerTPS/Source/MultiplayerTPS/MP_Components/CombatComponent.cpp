@@ -14,6 +14,7 @@
 #include "MultiplayerTPS/PlayerController/MP_PlayerController.h"
 #include "Camera/CameraComponent.h"
 #include "TimerManager.h"
+#include "Sound/SoundCue.h"
 
 #define TRACE_LENGTH 8000;
 UCombatComponent::UCombatComponent():
@@ -232,12 +233,7 @@ void UCombatComponent::ServerSetAiming_Implementation(bool bIsAiming)
 
 void UCombatComponent::FireButtonpressed(bool bPressed)
 {
-	if (!bPressed)
-	{
-		bCanFire = true;
-	}
 	bFireButtonPressed = bPressed;
-
 	if (bFireButtonPressed && bCanFire)
 	{
 		Fire();
@@ -273,19 +269,23 @@ void UCombatComponent::StartFireTimer()
 void UCombatComponent::FireTimerFinished()
 {
 	if (EquippedWeapon == nullptr) return;
-	if (bFireButtonPressed && EquippedWeapon->bAutomatic)
+	bCanFire = true;
+	if (bFireButtonPressed && bAutomaticFire)
 	{
-		bCanFire = true;
 		Fire();
+	}
+	if (EquippedWeapon->IsEmpty())
+	{
+		Reload();
 	}
 }
 
 bool UCombatComponent::CanFire()
 {
 	if (EquippedWeapon == nullptr) return false;
-	return !EquippedWeapon->IsEmpty() || !bCanFire;
+	return !EquippedWeapon->IsEmpty() && bCanFire && CombatState == ECombatState::ECS_Unoccupied;
 }
-
+ 
 void UCombatComponent::OnRep_CarriedAmmo()
 {
 	Controller = Controller == nullptr ? Cast<AMP_PlayerController>(Character->Controller) : Controller;
@@ -303,7 +303,7 @@ void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& Trac
 void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
 {
 	if (EquippedWeapon == nullptr) return;
-	if (Character)
+	if (Character && CombatState == ECombatState::ECS_Unoccupied)
 	{
 		Character->PlayFireMontage(bAiming);
 		EquippedWeapon->Fire(TraceHitTarget);
@@ -340,8 +340,27 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 		Controller->SetHUDCarriedAmmo(CarriedAmmo);
 	}
 
+	// play equip sound
+	if (EquippedWeapon->EquipSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(
+			this,
+			EquippedWeapon->EquipSound,
+			Character->GetActorLocation()
+		);
+	}
+
+	// Reload weapon if empty
+	if (EquippedWeapon->IsEmpty())
+	{
+		Reload();
+	}
+
 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 	Character->bUseControllerRotationYaw = true;
+
+	//Set EquippedWeapon state
+	bAutomaticFire = EquippedWeapon->bAutomatic;
 }
 
 void UCombatComponent::Reload()
@@ -358,22 +377,50 @@ void UCombatComponent::FinishReloading()
 	if (Character->HasAuthority())
 	{
 		CombatState = ECombatState::ECS_Unoccupied;
+		UpdateAmmoValues();
 	}
 	
+	// Fire immediately when finish reloading
+	if (bFireButtonPressed)
+	{
+		Fire();
+	}
+}
+
+void UCombatComponent::UpdateAmmoValues()
+{
+	if (EquippedWeapon == nullptr) return;
+	int32 ReloadAmount = AmountToReload();
+	if (CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType()))
+	{
+		CarriedAmmoMap[EquippedWeapon->GetWeaponType()] -= ReloadAmount;
+		CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()];
+	}
+	if (Controller)
+	{
+		Controller->SetHUDCarriedAmmo(CarriedAmmo);
+	}
+	EquippedWeapon->AddAmmo(-ReloadAmount);
+
 }
 
 void UCombatComponent::ServerReload_Implementation()
 {
-	if (Character == nullptr) return;
+	if (Character == nullptr || EquippedWeapon == nullptr) return;
+
 	CombatState = ECombatState::ECS_Reloading;
 	HandleReload();
-}
+} 
 
 void UCombatComponent::OnRep_CombatState()
 {
 	switch (CombatState)
 	{
 	case ECombatState::ECS_Unoccupied:
+		if (bFireButtonPressed)
+		{
+			Fire();
+		}
 		break;
 	case ECombatState::ECS_Reloading:
 		HandleReload();
@@ -385,9 +432,25 @@ void UCombatComponent::OnRep_CombatState()
 	}
 }
 
+
+
 void UCombatComponent::HandleReload()
 {
 	Character->PlayReloadMontage();
+}
+
+int32 UCombatComponent::AmountToReload()
+{
+	if (EquippedWeapon == nullptr) return 0;
+	int32 RoomInMag = EquippedWeapon->GetMagCapacity() - EquippedWeapon->GetAmmo();	//RoomInMag means empty magazine
+
+	if (CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType()))
+	{
+		int32 AmountCarried = CarriedAmmoMap[EquippedWeapon->GetWeaponType()];
+		int32 Least = FMath::Min(RoomInMag, AmountCarried);
+		return FMath::Clamp(RoomInMag, 0, Least);
+	}
+	return 0;
 }
 
 //ÓµÓÐÎäÆ÷Ê±ÇÐ»»ÐÐ¶¯×´Ì¬
@@ -402,6 +465,17 @@ void UCombatComponent::OnRep_EquippedWeapon()
 		{
 			HandSocket->AttachActor(EquippedWeapon, Character->GetMesh());
 		}
+
+		// play equip sound
+		if (EquippedWeapon->EquipSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(
+				this,
+				EquippedWeapon->EquipSound,
+				Character->GetActorLocation()
+			);
+		}
+
 		Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 		Character->bUseControllerRotationYaw = true;
 	}

@@ -24,6 +24,7 @@ class ACasing;
 class UTexture2D;
 class AMP_Character;
 class AMP_PlayerController;
+class USoundCue;
 
 UCLASS()
 class MULTIPLAYERTPS_API AWeapon : public AActor
@@ -44,7 +45,11 @@ public:
 	virtual void Fire(const FVector& HitTarget);
 	// Drop weapon
 	void Dropped();
+	// Called when finish relaoded weapon
+	virtual void AddAmmo(int32 AmmoToAdd);
 
+	UPROPERTY(EditAnywhere)
+	USoundCue* EquipSound;
 
 protected:
 	// Called when the game starts or when spawned
@@ -155,4 +160,6 @@ public:
 	FORCEINLINE float GetZoomInterpSpeed() const { return ZoomInterpSpeed; }
 	bool IsEmpty();
 	FORCEINLINE EWeaponType GetWeaponType() const { return WeaponType; }
+	FORCEINLINE int32 GetAmmo() const { return Ammo; }
+	FORCEINLINE int32 GetMagCapacity() const { return MagCapacity; }
 };

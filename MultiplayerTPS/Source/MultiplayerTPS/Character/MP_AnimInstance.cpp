@@ -97,6 +97,8 @@ void UMP_AnimInstance::NativeUpdateAnimation(float DeltaTime)
 		}
 	} 
 
-	// Update bUseFABRIK
+	// Update bool
 	bUseFABRIK = MP_Character->GetCombatState() != ECombatState::ECS_Reloading;
+	bUseAimOffsets = MP_Character->GetCombatState() != ECombatState::ECS_Reloading;
+	bTransformRightHand = MP_Character->GetCombatState() != ECombatState::ECS_Reloading;
 }
