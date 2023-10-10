@@ -10,7 +10,6 @@ void AMP_HUD::BeginPlay()
 {
 	Super::BeginPlay();
 
-	AddCharacterOverlay();
 }
 
 void AMP_HUD::AddCharacterOverlay()

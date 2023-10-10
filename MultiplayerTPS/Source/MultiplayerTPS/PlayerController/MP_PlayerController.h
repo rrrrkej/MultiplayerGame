@@ -7,6 +7,7 @@
 #include "MP_PlayerController.generated.h"
 
 class AMP_HUD;
+class UCharacterOverlay;
 /**
  * 
  */
@@ -26,8 +27,12 @@ public:
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void ReceivedPlayer() override;
-	
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	virtual  float GetServerTime(); //Synced with server world clock
+
+	void OnMatchStateSet(FName State);
+
 protected:
 	virtual void BeginPlay() override;
 	void SetHUDTime();
@@ -52,10 +57,28 @@ protected:
 	float TimeSyncRunningTime = 0.f;
 
 	void CheckTimeSync(float DeltaTime);
+
+	void PollInit();
 private:
 	UPROPERTY()
 	AMP_HUD* MP_HUD;
 
 	float MatchTime = 120.f;
 	uint32 CountdownInt = 0;
+
+	UPROPERTY(ReplicatedUsing = OnRep_MatchState)
+	FName MatchState;
+
+	UFUNCTION()
+	void OnRep_MatchState();
+
+	UPROPERTY()
+	UCharacterOverlay* CharacterOverlay;
+
+	bool bInitializeCharacterOverlay = false;
+
+	float HUDHealth;
+	float HUDMaxHealth;
+	float HUDScore;
+	int32 HUDDefeats;
 };

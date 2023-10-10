@@ -256,14 +256,14 @@ void AMP_Character::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	// Add Input Mapping Context
-	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
-	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
-		{
-			Subsystem->AddMappingContext(DefaultMappingContext, 0);
-		}
-	}
+	//// Add Input Mapping Context
+	//if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	//{
+	//	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+	//	{
+	//		Subsystem->AddMappingContext(DefaultMappingContext, 0);
+	//	}
+	//}
 
 	// Initialzied properties in HUD
 	UpdateHUDHealth();
@@ -572,9 +572,29 @@ FVector AMP_Character::GetHitTarget() const
 }
 
 #pragma region InputBinding
+
+void AMP_Character::InitializedEnhancedInput()
+{
+	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		{
+			Subsystem->AddMappingContext(DefaultMappingContext, 0);
+		}
+	}
+}
+
 // Called to bind functionality to input
 void AMP_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
+	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		{
+			Subsystem->AddMappingContext(DefaultMappingContext, 0);
+		}
+	}
+
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent)) {

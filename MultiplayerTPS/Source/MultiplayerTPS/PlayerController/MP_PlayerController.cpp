@@ -7,6 +7,9 @@
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "MultiplayerTPS/Character/MP_Character.h"
+#include "Net/UnrealNetwork.h"
+#include "MultiplayerTPS/GameMode/MP_GameMode.h"
+#include "MultiplayerTPS/DebugHeader.h"
 
 void AMP_PlayerController::BeginPlay()
 {
@@ -16,6 +19,12 @@ void AMP_PlayerController::BeginPlay()
 
 }
 
+void AMP_PlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AMP_PlayerController, MatchState);
+}
+
 void AMP_PlayerController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -23,6 +32,8 @@ void AMP_PlayerController::Tick(float DeltaTime)
 	SetHUDTime();
 
 	CheckTimeSync(DeltaTime);
+
+	PollInit();
 }
 
 void AMP_PlayerController::ReceivedPlayer()
@@ -61,6 +72,12 @@ void AMP_PlayerController::SetHUDHealth(float Health, float MaxHealth)
 		FString HealthText = FString::Printf(TEXT("%d/%d"), FMath::CeilToInt(Health), FMath::CeilToInt(MaxHealth));
 		MP_HUD->CharacterOverlay->HealthText->SetText(FText::FromString(HealthText));
 	}
+	else
+	{
+		bInitializeCharacterOverlay = true;
+		HUDHealth = Health;
+		HUDMaxHealth = MaxHealth;
+	}
 }
 
 void AMP_PlayerController::SetHUDScore(float Score)
@@ -75,6 +92,11 @@ void AMP_PlayerController::SetHUDScore(float Score)
 		FString ScoreText = FString::Printf(TEXT("%d"), FMath::FloorToInt(Score));
 		MP_HUD->CharacterOverlay->ScoreAmount->SetText(FText::FromString(ScoreText));
 	}
+	else
+	{
+		bInitializeCharacterOverlay = true;
+		HUDScore = Score;
+	}
 }
 
 void AMP_PlayerController::SetHUDDefeats(int32 Defeats)
@@ -88,6 +110,11 @@ void AMP_PlayerController::SetHUDDefeats(int32 Defeats)
 	{
 		FString DefeatsText = FString::Printf(TEXT("%d"), Defeats);
 		MP_HUD->CharacterOverlay->DefeatsAmount->SetText(FText::FromString(DefeatsText));
+	}
+	else
+	{
+		bInitializeCharacterOverlay = true;
+		HUDDefeats = Defeats;
 	}
 }
 
@@ -157,6 +184,23 @@ void AMP_PlayerController::CheckTimeSync(float DeltaTime)
 	}
 }
 
+void AMP_PlayerController::PollInit()
+{
+	if (CharacterOverlay == nullptr)
+	{
+		if (MP_HUD && MP_HUD->CharacterOverlay)
+		{
+			CharacterOverlay = MP_HUD->CharacterOverlay;
+			if (CharacterOverlay)
+			{
+				SetHUDHealth(HUDHealth, HUDMaxHealth);
+				SetHUDScore(HUDScore);
+				SetHUDDefeats(HUDDefeats);
+			}
+		}
+	}
+}
+
 void AMP_PlayerController::ServerRequestServerTime_Implementation(float TimeOfClientRequest)
 {
 	float ServerTimeOfReceipt = GetWorld()->GetTimeSeconds();
@@ -174,4 +218,36 @@ float AMP_PlayerController::GetServerTime()
 {
 	if (HasAuthority()) return GetWorld()->GetTimeSeconds();
 	else    return GetWorld()->GetTimeSeconds() + ClientServerDelta;
+}
+
+void AMP_PlayerController::OnMatchStateSet(FName State)
+{
+	MatchState = State;
+
+	if (MatchState == MatchState::InProgress)
+	{
+		MP_HUD = MP_HUD == nullptr ? Cast<AMP_HUD>(GetHUD()) : MP_HUD;
+		if (MP_HUD)
+		{
+			MP_HUD->AddCharacterOverlay();
+		}
+
+		////服务器端EnhancedInput绑定失败了，这里额外绑定了一次，原因未知。
+		//if (HasAuthority())
+		//{
+		//	Cast<AMP_Character>(GetCharacter())->InitializedEnhancedInput();
+		//}
+	}
+}
+
+void AMP_PlayerController::OnRep_MatchState()
+{
+	if (MatchState == MatchState::InProgress)
+	{
+		MP_HUD = MP_HUD == nullptr ? Cast<AMP_HUD>(GetHUD()) : MP_HUD;
+		if (MP_HUD)
+		{
+			MP_HUD->AddCharacterOverlay();
+		}
+	}
 }

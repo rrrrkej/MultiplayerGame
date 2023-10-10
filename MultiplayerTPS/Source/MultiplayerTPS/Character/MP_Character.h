@@ -57,6 +57,7 @@ protected:
 
 	// Poll for any relevant classes and initizlize HUDoverlay class
 	void PollInit();
+
 private:
 
 	UPROPERTY(VisibleAnywhere, Category = Camera)
@@ -188,8 +189,10 @@ public:
 #pragma endregion
 
 #pragma region InputBinding
-private:
+public:
+	void InitializedEnhancedInput();
 
+private:
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputMappingContext* DefaultMappingContext;
