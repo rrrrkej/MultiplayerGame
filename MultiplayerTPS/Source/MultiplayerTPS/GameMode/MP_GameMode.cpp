@@ -39,6 +39,11 @@ void AMP_GameMode::OnMatchStateSet()
 {
 	Super::OnMatchStateSet();
 
+	if (MatchState == MatchState::WaitingToStart)
+	{
+
+	}
+
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
 	{
 		AMP_PlayerController* MP_PlayerController = Cast<AMP_PlayerController>(*It);

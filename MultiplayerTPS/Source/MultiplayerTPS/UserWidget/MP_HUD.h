@@ -9,6 +9,7 @@
 class UTexture2D;
 class UCharacterOverlay;
 class UUserWidget;
+class UAnnouncement;
 
 USTRUCT(BlueprintType)
 struct FCrosshairPackage
@@ -35,6 +36,9 @@ class MULTIPLAYERTPS_API AMP_HUD : public AHUD
 public:
 	virtual void DrawHUD() override;
 
+	/**
+	* CharacterOverlay
+	*/
 	UPROPERTY(EditAnywhere, Category = "Player Stats")
 	TSubclassOf<UUserWidget> CharacterOverlayClass;
 	void AddCharacterOverlay();
@@ -42,6 +46,17 @@ public:
 	UPROPERTY()
 	UCharacterOverlay* CharacterOverlay;
 	
+	/**
+	* Announcement
+	*/
+	UPROPERTY(EditAnywhere, Category = "Announcements")
+	TSubclassOf<UUserWidget> AnnouncementClass;
+
+	UPROPERTY()
+	UAnnouncement* Announcement;
+
+	void AddAnnouncement();
+
 protected:
 	virtual void BeginPlay() override;
 

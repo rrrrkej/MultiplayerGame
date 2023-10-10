@@ -189,8 +189,6 @@ public:
 #pragma endregion
 
 #pragma region InputBinding
-public:
-	void InitializedEnhancedInput();
 
 private:
 	/** MappingContext */

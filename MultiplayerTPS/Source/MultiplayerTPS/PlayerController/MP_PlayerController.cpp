@@ -10,6 +10,8 @@
 #include "Net/UnrealNetwork.h"
 #include "MultiplayerTPS/GameMode/MP_GameMode.h"
 #include "MultiplayerTPS/DebugHeader.h"
+#include "MultiplayerTPS/UserWidget/Announcement.h"
+#include "Kismet/GameplayStatics.h"
 
 void AMP_PlayerController::BeginPlay()
 {
@@ -17,6 +19,36 @@ void AMP_PlayerController::BeginPlay()
 
 	MP_HUD = Cast<AMP_HUD>(GetHUD());
 
+	ServerCheckMatchState();
+
+}
+
+void AMP_PlayerController::ServerCheckMatchState_Implementation()
+{
+	AMP_GameMode* GameMode = Cast<AMP_GameMode>(UGameplayStatics::GetGameMode(this));
+	if (GameMode)
+	{
+		MatchState = GameMode->GetMatchState();
+		WarmupTime = GameMode->WarmupTime;
+		MatchTime = GameMode->MatchTime;
+		LevelStartingTime = GameMode->LevelStartingTime;
+		MatchState = GameMode->GetMatchState();
+		ClientJoinMidgame(MatchState, WarmupTime, MatchTime, LevelStartingTime);
+
+	}
+}
+
+void AMP_PlayerController::ClientJoinMidgame_Implementation(FName StateOfMatch, float Warmup, float Match, float StartingTime)
+{
+	WarmupTime = Warmup;
+	MatchTime = Match;
+	LevelStartingTime = StartingTime;
+	MatchState = StateOfMatch;
+	OnMatchStateSet(MatchState); //	in case this founction happends after OnRep_MatchState has happended
+	if (MP_HUD && MatchState == MatchState::WaitingToStart)
+	{
+		MP_HUD->AddAnnouncement();
+	}
 }
 
 void AMP_PlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -163,12 +195,40 @@ void AMP_PlayerController::SetHUDMatchCountdown(float CountdownTime)
 	}
 }
 
+void AMP_PlayerController::SetHUDAnnouncementCountdown(float CountdownTime)
+{
+	MP_HUD = MP_HUD == nullptr ? Cast<AMP_HUD>(GetHUD()) : MP_HUD;
+	bool bHUDValid = MP_HUD &&
+		MP_HUD->Announcement &&
+		MP_HUD->Announcement->WarmupTime;
+
+	if (bHUDValid)
+	{
+		int32 Minutes = FMath::FloorToInt(CountdownTime / 60.f);
+		int32 Seconds = CountdownTime - Minutes * 60;
+
+		FString CountdownText = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
+		MP_HUD->Announcement->WarmupTime->SetText(FText::FromString(CountdownText));
+	}
+}
+
 void AMP_PlayerController::SetHUDTime()
 {
-	uint32 SecondsLeft = FMath::CeilToInt(MatchTime - GetServerTime());
+	float TimeLeft = 0.f;
+	if (MatchState == MatchState::WaitingToStart) TimeLeft = WarmupTime - GetServerTime() + LevelStartingTime;
+	else if (MatchState == MatchState::InProgress) TimeLeft = WarmupTime + MatchTime - GetServerTime() + LevelStartingTime;
+
+	uint32 SecondsLeft = FMath::CeilToInt(TimeLeft);
 	if (CountdownInt != SecondsLeft)
 	{
-		SetHUDMatchCountdown(MatchTime - GetServerTime());
+		if (MatchState == MatchState::WaitingToStart)
+		{
+			SetHUDAnnouncementCountdown(TimeLeft);
+		}
+		else if (MatchState == MatchState::InProgress)
+		{
+			SetHUDMatchCountdown(TimeLeft);
+		}
 	}
 
 	CountdownInt = SecondsLeft;
@@ -226,17 +286,7 @@ void AMP_PlayerController::OnMatchStateSet(FName State)
 
 	if (MatchState == MatchState::InProgress)
 	{
-		MP_HUD = MP_HUD == nullptr ? Cast<AMP_HUD>(GetHUD()) : MP_HUD;
-		if (MP_HUD)
-		{
-			MP_HUD->AddCharacterOverlay();
-		}
-
-		////服务器端EnhancedInput绑定失败了，这里额外绑定了一次，原因未知。
-		//if (HasAuthority())
-		//{
-		//	Cast<AMP_Character>(GetCharacter())->InitializedEnhancedInput();
-		//}
+		HandleMatchHasStarted();
 	}
 }
 
@@ -244,10 +294,19 @@ void AMP_PlayerController::OnRep_MatchState()
 {
 	if (MatchState == MatchState::InProgress)
 	{
-		MP_HUD = MP_HUD == nullptr ? Cast<AMP_HUD>(GetHUD()) : MP_HUD;
-		if (MP_HUD)
+		HandleMatchHasStarted();
+	}
+}
+
+void AMP_PlayerController::HandleMatchHasStarted()
+{
+	MP_HUD = MP_HUD == nullptr ? Cast<AMP_HUD>(GetHUD()) : MP_HUD;
+	if (MP_HUD)
+	{
+		MP_HUD->AddCharacterOverlay();
+		if (MP_HUD->Announcement)
 		{
-			MP_HUD->AddCharacterOverlay();
+			MP_HUD->Announcement->SetVisibility(ESlateVisibility::Hidden);
 		}
 	}
 }
