@@ -35,7 +35,7 @@ public:
 	virtual  float GetServerTime(); //Synced with server world clock
 
 	void OnMatchStateSet(FName State);
-	// call the function corresponding to the value of GameState
+	// call the function corresponding to the value of MatchState
 	void HandleMatchHasStarted();
 	void HandleCooldown();
 

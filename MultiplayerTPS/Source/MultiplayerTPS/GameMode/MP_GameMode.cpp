@@ -8,6 +8,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerStart.h"
 #include "MultiplayerTPS/PlayerState/MP_PlayerState.h"
+#include "MultiplayerTPS/GameState/MP_GameState.h"
 
 namespace MatchState
 {
@@ -72,13 +73,21 @@ void AMP_GameMode::OnMatchStateSet()
 
 void AMP_GameMode::PlayerEliminated(AMP_Character* ElimmedCharacter, AMP_PlayerController* VictimController, AMP_PlayerController* AttackerController)
 {
+	if (AttackerController == nullptr || AttackerController->PlayerState == nullptr) return;
+	if (VictimController == nullptr || VictimController->PlayerState == nullptr) return;
 	AMP_PlayerState* AttackerPlayerState = AttackerController ? Cast<AMP_PlayerState>(AttackerController->PlayerState) : nullptr;
 	AMP_PlayerState* VictimPlayerState = VictimController ? Cast<AMP_PlayerState>(VictimController->PlayerState) : nullptr;
+
+	AMP_GameState* MP_GameState = GetGameState<AMP_GameState>();
 
 	// Update AttackerPlayerState
 	if(AttackerPlayerState && AttackerPlayerState != VictimPlayerState)
 	{
 		AttackerPlayerState->AddToScore(1.f);
+		if (MP_GameState)
+		{
+			MP_GameState->UpdateTopScore(AttackerPlayerState);
+		}
 	}
 	// Update VictimPlayerState
 	if (VictimPlayerState)

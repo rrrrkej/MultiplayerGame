@@ -13,6 +13,8 @@
 #include "MultiplayerTPS/UserWidget/Announcement.h"
 #include "Kismet/GameplayStatics.h"
 #include "MultiplayerTPS/MP_Components/CombatComponent.h"
+#include "MultiplayerTPS/GameState/MP_GameState.h"
+#include "MultiplayerTPS/PlayerState/MP_PlayerState.h"
 
 void AMP_PlayerController::BeginPlay()
 {
@@ -365,7 +367,37 @@ void AMP_PlayerController::HandleCooldown()
 			MP_HUD->Announcement->SetVisibility(ESlateVisibility::Visible);
 			FString AnnouncementText("New Match States In:");
 			MP_HUD->Announcement->AnnouncementText->SetText(FText::FromString(AnnouncementText));
-			MP_HUD->Announcement->InfoText->SetVisibility(ESlateVisibility::Hidden);
+
+			//	Set InfoText
+			AMP_GameState* MP_GameState = Cast<AMP_GameState>(UGameplayStatics::GetGameState(this));
+			AMP_PlayerState* MP_PlayerState = GetPlayerState<AMP_PlayerState>();
+			if (MP_GameState && MP_PlayerState)
+			{
+				TArray<AMP_PlayerState*> TopPlayers = MP_GameState->TopScoringPlayers;
+				FString InfoTextString;
+				if (TopPlayers.Num() == 0)
+				{
+					InfoTextString = FString("There is no winner.");
+				}
+				else if (TopPlayers.Num() == 1 && TopPlayers[0] == MP_PlayerState)
+				{
+					InfoTextString = FString("You are the winner!");
+				}
+				else if (TopPlayers.Num() == 1 )
+				{
+					InfoTextString = FString::Printf(TEXT("Winner: \n%s"), *TopPlayers[0]->GetPlayerName());
+				}
+				else if (TopPlayers.Num() > 1)
+				{
+					InfoTextString = FString("Players tied for the win:\n");
+					for (auto TiedPlayer : TopPlayers)
+					{
+						InfoTextString.Append(FString::Printf(TEXT("%s\n"), *TiedPlayer->GetPlayerName()));
+					}
+				}
+				MP_HUD->Announcement->InfoText->SetText(FText::FromString(InfoTextString));
+			}
+			
 		}
 	}
 

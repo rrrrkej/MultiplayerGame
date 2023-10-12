@@ -131,7 +131,9 @@ void AMP_Character::Destroyed()
 	}
 
 	// Destroy the weapon when GameSate become Cooldown
-	if (CombatComponent && CombatComponent->EquippedWeapon)
+	AMP_GameMode* GameMode = Cast<AMP_GameMode>(UGameplayStatics::GetGameMode(this));
+	bool bMatchNotInProgress = GameMode && GameMode->GetMatchState() != MatchState::InProgress;
+	if (bMatchNotInProgress && CombatComponent && CombatComponent->EquippedWeapon)
 	{
 		CombatComponent->EquippedWeapon->Destroy();
 	}
@@ -161,7 +163,10 @@ void AMP_Character::MulticastElim_Implementation()
 	GetCharacterMovement()->DisableMovement();
 	GetCharacterMovement()->StopMovementImmediately();
 	bDisableGameplay = true;
-
+	if (CombatComponent)
+	{
+		CombatComponent->FireButtonpressed(false);
+	}
 	// Disable collision
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);

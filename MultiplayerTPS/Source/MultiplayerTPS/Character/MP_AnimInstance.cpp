@@ -100,7 +100,7 @@ void UMP_AnimInstance::NativeUpdateAnimation(float DeltaTime)
 	/**
 	* Update boolean in AnimtionBlueprint
 	* 1.ECombatState:Character state, declare in CombatComponent.h
-	* 2.bDisableGameplay:alter when GameState change
+	* 2.bDisableGameplay:alter when MatchState change
 	*/
 	bUseFABRIK = MP_Character->GetCombatState() != ECombatState::ECS_Reloading;
 	bUseAimOffsets = MP_Character->GetCombatState() != ECombatState::ECS_Reloading && !MP_Character->GetDisableGameplay();
