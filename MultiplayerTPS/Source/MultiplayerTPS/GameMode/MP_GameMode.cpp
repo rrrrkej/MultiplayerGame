@@ -9,6 +9,11 @@
 #include "GameFramework/PlayerStart.h"
 #include "MultiplayerTPS/PlayerState/MP_PlayerState.h"
 
+namespace MatchState
+{
+	const FName Cooldown = FName("Cooldown");
+}
+
 AMP_GameMode::AMP_GameMode()
 {
 	bDelayedStart = true;
@@ -27,22 +32,29 @@ void AMP_GameMode::Tick(float DeltaTime)
 
 	if (MatchState == MatchState::WaitingToStart)
 	{
-		CountDownTime = WarmupTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
-		if (CountDownTime <= 0.f)
+		CountdownTime = WarmupTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+		if (CountdownTime <= 0.f)
 		{
 			StartMatch();
 		}
+	}
+	else if (MatchState == MatchState::InProgress)
+	{
+		CountdownTime = WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+		if (CountdownTime <= 0.f)
+		{
+			SetMatchState(MatchState::Cooldown);
+		}
+	}
+	else if (MatchState == MatchState::Cooldown)
+	{
+		CountdownTime = CooldownTime + WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
 	}
 }
 
 void AMP_GameMode::OnMatchStateSet()
 {
 	Super::OnMatchStateSet();
-
-	if (MatchState == MatchState::WaitingToStart)
-	{
-
-	}
 
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
 	{

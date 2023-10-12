@@ -23,6 +23,7 @@ void AMP_PlayerController::BeginPlay()
 
 }
 
+//	call at BeginPlay()
 void AMP_PlayerController::ServerCheckMatchState_Implementation()
 {
 	AMP_GameMode* GameMode = Cast<AMP_GameMode>(UGameplayStatics::GetGameMode(this));
@@ -31,17 +32,19 @@ void AMP_PlayerController::ServerCheckMatchState_Implementation()
 		MatchState = GameMode->GetMatchState();
 		WarmupTime = GameMode->WarmupTime;
 		MatchTime = GameMode->MatchTime;
+		CooldownTime = GameMode->CooldownTime;
 		LevelStartingTime = GameMode->LevelStartingTime;
 		MatchState = GameMode->GetMatchState();
-		ClientJoinMidgame(MatchState, WarmupTime, MatchTime, LevelStartingTime);
+		ClientJoinMidgame(MatchState, WarmupTime, MatchTime, CooldownTime, LevelStartingTime);
 
 	}
 }
 
-void AMP_PlayerController::ClientJoinMidgame_Implementation(FName StateOfMatch, float Warmup, float Match, float StartingTime)
+void AMP_PlayerController::ClientJoinMidgame_Implementation(FName StateOfMatch, float Warmup, float Match,float Cooldown, float StartingTime)
 {
 	WarmupTime = Warmup;
 	MatchTime = Match;
+	CooldownTime = Cooldown;
 	LevelStartingTime = StartingTime;
 	MatchState = StateOfMatch;
 	OnMatchStateSet(MatchState); //	in case this founction happends after OnRep_MatchState has happended
@@ -187,6 +190,13 @@ void AMP_PlayerController::SetHUDMatchCountdown(float CountdownTime)
 
 	if (bHUDValid)
 	{
+		//	Handle limb condition scuh as at begining
+		if (CountdownTime < 0.f)
+		{
+			MP_HUD->CharacterOverlay->MatchCountdownText->SetText(FText());
+			return;
+		}
+
 		int32 Minutes = FMath::FloorToInt(CountdownTime / 60.f);
 		int32 Seconds = CountdownTime - Minutes * 60;
 
@@ -204,6 +214,13 @@ void AMP_PlayerController::SetHUDAnnouncementCountdown(float CountdownTime)
 
 	if (bHUDValid)
 	{
+		//	Handle limb condition scuh as at begining
+		if (CountdownTime < 0.f)
+		{
+			MP_HUD->Announcement->WarmupTime->SetText(FText());
+			return;
+		}
+
 		int32 Minutes = FMath::FloorToInt(CountdownTime / 60.f);
 		int32 Seconds = CountdownTime - Minutes * 60;
 
@@ -217,11 +234,22 @@ void AMP_PlayerController::SetHUDTime()
 	float TimeLeft = 0.f;
 	if (MatchState == MatchState::WaitingToStart) TimeLeft = WarmupTime - GetServerTime() + LevelStartingTime;
 	else if (MatchState == MatchState::InProgress) TimeLeft = WarmupTime + MatchTime - GetServerTime() + LevelStartingTime;
-
+	else if (MatchState == MatchState::Cooldown) TimeLeft = CooldownTime + WarmupTime + MatchTime - GetServerTime() + LevelStartingTime;
 	uint32 SecondsLeft = FMath::CeilToInt(TimeLeft);
+
+	//	这边的处理看不懂，P116,同时会导致server端cooldown倒计时卡住
+	if (HasAuthority())
+	{
+		MP_GameMode = MP_GameMode == nullptr ? Cast<AMP_GameMode>(UGameplayStatics::GetGameMode(this)) : MP_GameMode; 
+		if (MP_GameMode)
+		{
+			SecondsLeft = FMath::CeilToInt(MP_GameMode->GetCountdownTime() + LevelStartingTime);
+		}
+	}
+
 	if (CountdownInt != SecondsLeft)
 	{
-		if (MatchState == MatchState::WaitingToStart)
+		if (MatchState == MatchState::WaitingToStart || MatchState == MatchState::Cooldown)
 		{
 			SetHUDAnnouncementCountdown(TimeLeft);
 		}
@@ -288,6 +316,10 @@ void AMP_PlayerController::OnMatchStateSet(FName State)
 	{
 		HandleMatchHasStarted();
 	}
+	else if (MatchState == MatchState::Cooldown)
+	{
+		HandleCooldown();
+	}
 }
 
 void AMP_PlayerController::OnRep_MatchState()
@@ -295,6 +327,10 @@ void AMP_PlayerController::OnRep_MatchState()
 	if (MatchState == MatchState::InProgress)
 	{
 		HandleMatchHasStarted();
+	}
+	else if (MatchState == MatchState::Cooldown)
+	{
+		HandleCooldown();
 	}
 }
 
@@ -307,6 +343,27 @@ void AMP_PlayerController::HandleMatchHasStarted()
 		if (MP_HUD->Announcement)
 		{
 			MP_HUD->Announcement->SetVisibility(ESlateVisibility::Hidden);
+		}
+	}
+}
+
+void AMP_PlayerController::HandleCooldown()
+{
+	MP_HUD = MP_HUD == nullptr ? Cast<AMP_HUD>(GetHUD()) : MP_HUD;
+	if (MP_HUD)
+	{
+		MP_HUD->CharacterOverlay->RemoveFromParent();
+
+		bool bHUDValid = MP_HUD->Announcement
+			&& MP_HUD->Announcement->AnnouncementText
+			&& MP_HUD->Announcement->InfoText;
+
+		if (bHUDValid)
+		{
+			MP_HUD->Announcement->SetVisibility(ESlateVisibility::Visible);
+			FString AnnouncementText("New Match States In:");
+			MP_HUD->Announcement->AnnouncementText->SetText(FText::FromString(AnnouncementText));
+			MP_HUD->Announcement->InfoText->SetVisibility(ESlateVisibility::Hidden);
 		}
 	}
 }
