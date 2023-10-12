@@ -24,7 +24,8 @@ UCombatComponent::UCombatComponent():
 	CombatState(ECombatState::ECS_Unoccupied)
 {
 	PrimaryComponentTick.bCanEverTick = true;
-	SetIsReplicated(true);
+	SetIsReplicatedByDefault(true);
+	
 }
 
 void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

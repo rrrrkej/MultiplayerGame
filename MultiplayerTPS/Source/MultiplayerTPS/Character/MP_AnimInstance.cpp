@@ -97,8 +97,12 @@ void UMP_AnimInstance::NativeUpdateAnimation(float DeltaTime)
 		}
 	} 
 
-	// Update bool
+	/**
+	* Update boolean in AnimtionBlueprint
+	* 1.ECombatState:Character state, declare in CombatComponent.h
+	* 2.bDisableGameplay:alter when GameState change
+	*/
 	bUseFABRIK = MP_Character->GetCombatState() != ECombatState::ECS_Reloading;
-	bUseAimOffsets = MP_Character->GetCombatState() != ECombatState::ECS_Reloading;
-	bTransformRightHand = MP_Character->GetCombatState() != ECombatState::ECS_Reloading;
+	bUseAimOffsets = MP_Character->GetCombatState() != ECombatState::ECS_Reloading && !MP_Character->GetDisableGameplay();
+	bTransformRightHand = MP_Character->GetCombatState() != ECombatState::ECS_Reloading && !MP_Character->GetDisableGameplay();
 }

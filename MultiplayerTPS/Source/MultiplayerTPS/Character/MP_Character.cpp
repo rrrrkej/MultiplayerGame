@@ -86,6 +86,7 @@ void AMP_Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	// Ìõ¼þ·¢ËÍ
 	DOREPLIFETIME_CONDITION(AMP_Character, OverlappingWeapon, COND_OwnerOnly);
 	DOREPLIFETIME(AMP_Character, Health);
+	DOREPLIFETIME(AMP_Character, bDisableGameplay)
 }
 
 void AMP_Character::PostInitializeComponents()
@@ -123,9 +124,16 @@ void AMP_Character::Elim()
 void AMP_Character::Destroyed()
 {
 	Super::Destroyed();
+	// 
 	if (ElimBotComponent)
 	{
 		ElimBotComponent->DestroyComponent();
+	}
+
+	// Destroy the weapon when GameSate become Cooldown
+	if (CombatComponent && CombatComponent->EquippedWeapon)
+	{
+		CombatComponent->EquippedWeapon->Destroy();
 	}
 }
 
@@ -152,16 +160,13 @@ void AMP_Character::MulticastElim_Implementation()
 	// Disable character movement
 	GetCharacterMovement()->DisableMovement();
 	GetCharacterMovement()->StopMovementImmediately();
-	if (MP_PlayerController)
-	{
-		DisableInput(MP_PlayerController);
-	}
+	bDisableGameplay = true;
 
 	// Disable collision
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	// Spawn ElimBot
+	// Spawn ElimBot component
 	if (ElimBotEffect)
 	{
 		FVector ElimBotSpawnPoint(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z + 200.f);
@@ -220,20 +225,7 @@ void AMP_Character::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (GetLocalRole() > ENetRole::ROLE_SimulatedProxy && IsLocallyControlled())
-	{
-		AimOffset(DeltaTime);
-	}
-	else
-	{
-		TimeSinceLastMovementReplication += DeltaTime;
-		if (TimeSinceLastMovementReplication > 0.25f)
-		{
-			OnRep_ReplicatedMovement();
-		}
-		CalculateAO_Pitch();
-	}
-
+	RotateInPlace(DeltaTime);
 	HideCamera();
 	PollInit();
 }
@@ -248,6 +240,31 @@ void AMP_Character::PollInit()
 			MP_PlayerState->AddToScore(0.f);
 			MP_PlayerState->AddToDefeats(0);
 		}
+	}
+}
+
+void AMP_Character::RotateInPlace(float DeltaTime)
+{
+	//	Handle
+	if (bDisableGameplay)
+	{
+		bUseControllerRotationYaw = false;
+		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+		return;
+	}
+
+	if (GetLocalRole() > ENetRole::ROLE_SimulatedProxy && IsLocallyControlled())
+	{
+		AimOffset(DeltaTime);
+	}
+	else
+	{
+		TimeSinceLastMovementReplication += DeltaTime;
+		if (TimeSinceLastMovementReplication > 0.25f)
+		{
+			OnRep_ReplicatedMovement();
+		}
+		CalculateAO_Pitch();
 	}
 }
 
@@ -609,6 +626,8 @@ void AMP_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 
 void AMP_Character::Move(const FInputActionValue& Value)
 {
+	if (bDisableGameplay) return;
+
 	// input 2D Value
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
@@ -644,6 +663,8 @@ void AMP_Character::Look(const FInputActionValue& Value)
 
 void AMP_Character::Jump(const FInputActionValue& Value)
 {
+	if (bDisableGameplay) return;
+
 	if (bIsCrouched)
 	{
 		Super::UnCrouch();
@@ -658,6 +679,7 @@ void AMP_Character::Jump(const FInputActionValue& Value)
 //Called by server
 void AMP_Character::Interaction(const FInputActionValue& Value)
 {
+	if (bDisableGameplay) return;
 	if (CombatComponent)
 	{
 		if (HasAuthority())
@@ -673,6 +695,8 @@ void AMP_Character::Interaction(const FInputActionValue& Value)
 
 void AMP_Character::Crouch(const FInputActionValue& Value)
 {
+	if (bDisableGameplay) return;
+
 	if (bIsCrouched)
 	{
 		Super::UnCrouch();
@@ -686,6 +710,8 @@ void AMP_Character::Crouch(const FInputActionValue& Value)
 
 void AMP_Character::Aim(const FInputActionValue& Value)
 {
+	if (bDisableGameplay) return;
+
 	bool bAiming = Value.Get<bool>();
 	if (CombatComponent)
 	{
@@ -696,6 +722,8 @@ void AMP_Character::Aim(const FInputActionValue& Value)
 
 void AMP_Character::EndAim(const FInputActionValue& Value)
 {
+	if (bDisableGameplay) return;
+
 	bool bAiming = Value.Get<bool>();
 	if (CombatComponent)
 	{
@@ -705,6 +733,8 @@ void AMP_Character::EndAim(const FInputActionValue& Value)
 
 void AMP_Character::Fire(const FInputActionValue& Value)
 {
+	if (bDisableGameplay) return;
+
 	bool bFire = Value.Get<bool>();
 	if (CombatComponent && CombatComponent->EquippedWeapon)
 	{
@@ -723,6 +753,8 @@ void AMP_Character::EndFire(const FInputActionValue& Value)
 
 void AMP_Character::Reload(const FInputActionValue& Value)
 {
+	if (bDisableGameplay) return;
+
 	bool bReload = Value.Get<bool>();
 	if (CombatComponent)
 	{

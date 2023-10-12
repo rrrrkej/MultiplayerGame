@@ -41,9 +41,10 @@ protected:
 
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
-
+public:
 	void FireButtonpressed(bool bPressed);
 
+protected:
 	void Fire();
 
 	UFUNCTION(Server, Reliable)

@@ -42,6 +42,11 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastElim();
 	virtual void Destroyed() override;
+
+	//	alter value when GameState equals to Cooldown
+	UPROPERTY(Replicated)
+	bool bDisableGameplay = false;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -57,7 +62,8 @@ protected:
 
 	// Poll for any relevant classes and initizlize HUDoverlay class
 	void PollInit();
-
+	// Founction for Rotate In Place feature
+	void RotateInPlace(float DeltaTime);
 private:
 
 	UPROPERTY(VisibleAnywhere, Category = Camera)
@@ -271,4 +277,6 @@ public:
 	FORCEINLINE float GetHealth() const{ return Health; }
 	FORCEINLINE float GetMaxHealth() const{ return MaxHealth; }
 	ECombatState GetCombatState() const;
+	FORCEINLINE UCombatComponent* GetCombatComponent() const { return CombatComponent; }
+	FORCEINLINE bool GetDisableGameplay() const { return bDisableGameplay; }
 };

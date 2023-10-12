@@ -12,6 +12,7 @@
 #include "MultiplayerTPS/DebugHeader.h"
 #include "MultiplayerTPS/UserWidget/Announcement.h"
 #include "Kismet/GameplayStatics.h"
+#include "MultiplayerTPS/MP_Components/CombatComponent.h"
 
 void AMP_PlayerController::BeginPlay()
 {
@@ -21,6 +22,7 @@ void AMP_PlayerController::BeginPlay()
 
 	ServerCheckMatchState();
 
+	
 }
 
 //	call at BeginPlay()
@@ -237,7 +239,7 @@ void AMP_PlayerController::SetHUDTime()
 	else if (MatchState == MatchState::Cooldown) TimeLeft = CooldownTime + WarmupTime + MatchTime - GetServerTime() + LevelStartingTime;
 	uint32 SecondsLeft = FMath::CeilToInt(TimeLeft);
 
-	//	这边的处理看不懂，P116,同时会导致server端cooldown倒计时卡住
+	//	这边的处理看不懂
 	if (HasAuthority())
 	{
 		MP_GameMode = MP_GameMode == nullptr ? Cast<AMP_GameMode>(UGameplayStatics::GetGameMode(this)) : MP_GameMode; 
@@ -364,6 +366,16 @@ void AMP_PlayerController::HandleCooldown()
 			FString AnnouncementText("New Match States In:");
 			MP_HUD->Announcement->AnnouncementText->SetText(FText::FromString(AnnouncementText));
 			MP_HUD->Announcement->InfoText->SetVisibility(ESlateVisibility::Hidden);
+		}
+	}
+
+	AMP_Character* MP_Character = Cast<AMP_Character>(GetPawn());
+	if (MP_Character)
+	{
+		MP_Character->bDisableGameplay = true;
+		if (MP_Character->GetCombatComponent())
+		{
+			MP_Character->GetCombatComponent()->FireButtonpressed(false);
 		}
 	}
 }
