@@ -119,7 +119,7 @@ private:
 	UPROPERTY(EditAnywhere)
 	float ZoomInterpSpeed = 20.f;
 
-	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_Ammo, Category = Combat)
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_Ammo, Category = Weapon)
 	int32 Ammo;
 
 	UFUNCTION()
@@ -128,7 +128,7 @@ private:
 	// Round means bullet, Ammo amount minuse 1
 	void SpendRound();
 
-	UPROPERTY(EditAnywhere, Category = Combat)
+	UPROPERTY(EditAnywhere, Category = Weapon)
 	int32 MagCapacity;
 
 	UPROPERTY()

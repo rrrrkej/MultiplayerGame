@@ -343,7 +343,9 @@ void AMP_PlayerController::HandleMatchHasStarted()
 	MP_HUD = MP_HUD == nullptr ? Cast<AMP_HUD>(GetHUD()) : MP_HUD;
 	if (MP_HUD)
 	{
-		MP_HUD->AddCharacterOverlay();
+		if(MP_HUD->CharacterOverlay == nullptr)
+			MP_HUD->AddCharacterOverlay();
+
 		if (MP_HUD->Announcement)
 		{
 			MP_HUD->Announcement->SetVisibility(ESlateVisibility::Hidden);

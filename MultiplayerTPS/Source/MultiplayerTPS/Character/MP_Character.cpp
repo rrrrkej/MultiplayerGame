@@ -55,7 +55,7 @@ AMP_Character::AMP_Character()
 	// initialize CombatComponent
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 	CombatComponent->SetIsReplicated(true);
-
+	
 	// Set properties in CMC
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 0.f, 720.f);
