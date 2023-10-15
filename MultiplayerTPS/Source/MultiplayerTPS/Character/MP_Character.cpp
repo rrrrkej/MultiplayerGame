@@ -480,6 +480,10 @@ void AMP_Character::PlayReloadMontage()
 		case EWeaponType::EWT_AssaultRifle:
 			SectionName = FName("Rifle");
 			break;
+		//	error:还没有RocketLauncher的装弹动画
+		case EWeaponType::EWT_RocketLauncher:
+			SectionName = FName("Rifle");
+			break;
 		case EWeaponType::EWT_MAX:
 			break;
 		default:
