@@ -100,6 +100,7 @@ private:
 	float CrosshairAimFactor;
 	float CrosshairShootingFactor;
 
+	// Calculate every fram
 	FVector HitTarget;
 
 	/**
@@ -139,11 +140,13 @@ private:
 
 	TMap<EWeaponType, int32> CarriedAmmoMap;
 
+	//	reserve ammunition
 	UPROPERTY(EditAnywhere)
 	int32 StartingARAmmo = 30;
-
 	UPROPERTY(EditAnywhere)
 	int32 StartingRocketAmmo = 2;
+	UPROPERTY(EditAnywhere)
+	int32 StartingPistolAmmo = 36;
 
 	void InitializeCarriedAmmo();
 
