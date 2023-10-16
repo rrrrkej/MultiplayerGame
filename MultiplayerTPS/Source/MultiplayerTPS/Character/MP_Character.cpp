@@ -480,12 +480,16 @@ void AMP_Character::PlayReloadMontage()
 		case EWeaponType::EWT_AssaultRifle:
 			SectionName = FName("Rifle");
 			break;
-		//	error:还没有RocketLauncher的装弹动画
+		//	error:没有RocketLauncher的装弹动画
 		case EWeaponType::EWT_RocketLauncher:
 			SectionName = FName("Rifle");
 			break;
-		//	error:还没有Pistol的装弹动画
+		//	error:没有Pistol的装弹动画
 		case EWeaponType::EWT_Pistol:
+			SectionName = FName("Rifle");
+			break;
+		//	error:没有SMG的装弹动画
+		case EWeaponType::EWT_SubmachineGun:
 			SectionName = FName("Rifle");
 			break;
 		default:

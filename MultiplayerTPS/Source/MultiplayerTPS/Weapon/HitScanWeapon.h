@@ -25,8 +25,18 @@ private:
 	float Damage = 40.f;
 
 	UPROPERTY(EditAnywhere)
-	UParticleSystem* ImpactParticles;
+	UParticleSystem* ImpactParticles; // 命中效果
 
 	UPROPERTY(EditAnywhere)
-	UParticleSystem* BeamParticle;
+	UParticleSystem* BeamParticle; // 弹道轨迹
+
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* MuzzleFlash; // 枪口火焰
+
+	UPROPERTY(EditAnywhere)
+	USoundCue* FireSound; // 开火音效
+
+	UPROPERTY(EditAnywhere)
+	USoundCue* HitSound; // 命中音效
+
 };
