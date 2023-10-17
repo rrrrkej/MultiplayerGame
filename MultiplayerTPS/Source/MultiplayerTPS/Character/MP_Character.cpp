@@ -492,6 +492,10 @@ void AMP_Character::PlayReloadMontage()
 		case EWeaponType::EWT_SubmachineGun:
 			SectionName = FName("Rifle");
 			break;
+		//	error:没有Shotgun的装弹动画
+		case EWeaponType::EWT_Shotgun:
+			SectionName = FName("Rifle");
+			break;
 		default:
 			break;
 		}

@@ -16,7 +16,6 @@
 #include "TimerManager.h"
 #include "Sound/SoundCue.h"
 
-#define TRACE_LENGTH 8000;
 UCombatComponent::UCombatComponent():
 	BaseWalkSpeed(600.f),
 	AimWalkSpeed(450.f),
@@ -488,4 +487,5 @@ void UCombatComponent::InitializeCarriedAmmo()
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_RocketLauncher, StartingRocketAmmo);
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_Pistol, StartingPistolAmmo);
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_SubmachineGun, StartingSMGAmmo);
+	CarriedAmmoMap.Emplace(EWeaponType::EWT_Shotgun, StartingShotgunAmmo);
 }
