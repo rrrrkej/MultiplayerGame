@@ -22,14 +22,18 @@ public:
 protected:
 	FVector TraceEndWithScatter(const FVector& TraceStart, const FVector& HitTarget);
 
-private:
-
-	UPROPERTY(EditAnywhere)
-	float Damage = 40.f;
+	void WeaponTraceHit(const FVector& TraceStart, const FVector& HitTarget, FHitResult& OutHit);
 
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* ImpactParticles; // 命中效果
 
+	UPROPERTY(EditAnywhere)
+	USoundCue* HitSound; // 命中音效
+
+	UPROPERTY(EditAnywhere)
+	float Damage = 40.f; // 单次命中伤害
+
+private:
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* BeamParticle; // 弹道轨迹
 
@@ -38,9 +42,6 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	USoundCue* FireSound; // 开火音效
-
-	UPROPERTY(EditAnywhere)
-	USoundCue* HitSound; // 命中音效
 
 	/**
 	* Trace end with scatter

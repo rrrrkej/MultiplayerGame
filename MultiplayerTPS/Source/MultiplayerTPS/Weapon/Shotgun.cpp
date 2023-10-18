@@ -23,10 +23,61 @@ void AShotgun::Fire(const FVector& HitTarget)
 	{
 		FTransform SocketTransform = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
 		FVector Start = SocketTransform.GetLocation();
+
+		TMap<AMP_Character*, uint32> HitMap;	//	命中对象
 		for (uint32 i = 0; i < NumberOfPellets; i++)
 		{
-			FVector End = TraceEndWithScatter(Start, HitTarget);
+			FHitResult FireHit;	//	命中结果
+			WeaponTraceHit(Start, HitTarget, FireHit);		// 计算命中结果
+
+			AMP_Character* MP_Character = Cast<AMP_Character>(FireHit.GetActor());
+			if (MP_Character && HasAuthority() && InstigatorController)
+			{
+				if (HitMap.Contains(MP_Character))
+				{
+					HitMap[MP_Character]++;
+				}
+				else
+				{
+					HitMap.Emplace(MP_Character, 1);
+				}
+			}
+
+			//	Spawn impact ParticleSystem
+			if (ImpactParticles)
+			{
+				UGameplayStatics::SpawnEmitterAtLocation(
+					GetWorld(),
+					ImpactParticles,
+					FireHit.ImpactPoint,
+					FireHit.ImpactNormal.Rotation()
+				);
+			}
+
+			//Spawn HitTarget soundcue
+			if (HitSound)
+			{
+				UGameplayStatics::PlaySoundAtLocation(
+					this,
+					HitSound,
+					FireHit.ImpactPoint,
+					.5f,
+					FMath::FRandRange(-.5f, .5f)
+				);
+			}
 		}
-		
+		for (auto HitPair : HitMap)
+		{
+			if (HitPair.Key && HasAuthority() && InstigatorController)
+			{
+				UGameplayStatics::ApplyDamage(
+					HitPair.Key,
+					Damage * HitPair.Value,
+					InstigatorController,
+					this,
+					UDamageType::StaticClass()
+				);
+			}
+		}
 	}
 }
