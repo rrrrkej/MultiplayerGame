@@ -9,6 +9,8 @@
 #include "Sound/SoundCue.h"
 #include "MultiplayerTPS/Character/MP_Character.h"
 #include "MultiplayerTPS/MultiplayerTPS.h"
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 
 AProjectile::AProjectile()
 {
@@ -33,20 +35,6 @@ void AProjectile::Tick(float DeltaTime)
 	
 }
 
-void AProjectile::Destroyed()
-{
-	Super::Destroyed();
-	if (ImpactParticles)
-	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, GetActorTransform());
-	}
-
-	if (ImpactSound)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation());
-	}
-}
- 
 void AProjectile::BeginPlay()
 {
 	Super::BeginPlay();
@@ -70,11 +58,83 @@ void AProjectile::BeginPlay()
 	}
 }
 
+void AProjectile::StartDestroyTimer()
+{
+	// Delay destroy
+	GetWorldTimerManager().SetTimer(
+		DestroyTimer,
+		this,
+		&AProjectile::DestroyTimerFinished,
+		DestroyTime
+	);
+}
+
+void AProjectile::DestroyTimerFinished()
+{
+	Destroy();
+}
+
+void AProjectile::Destroyed()
+{
+	Super::Destroyed();
+	if (ImpactParticles)
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, GetActorTransform());
+	}
+
+	if (ImpactSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation());
+	}
+}
+ 
+
+
 // ·þÎñÆ÷¶ËÖ´ÐÐ
 void AProjectile::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	Destroy();
 }
 
+void AProjectile::SpawnTrailSystem()
+{
+	if (TrailSystem)
+	{
+		TrailSystemComponent =
+			UNiagaraFunctionLibrary::SpawnSystemAttached(
+				TrailSystem,
+				GetRootComponent(),
+				FName(),
+				GetActorLocation(),
+				GetActorRotation(),
+				EAttachLocation::KeepWorldPosition,
+				false
+			);
+	}
+}
 
+void AProjectile::ExplodeDamage()
+{
+	APawn* FiringPawn = GetInstigator();
+	if (FiringPawn && HasAuthority())
+	{
+		AController* FiringController = FiringPawn->GetController();
+		if (FiringController)
+		{
+			UGameplayStatics::ApplyRadialDamageWithFalloff(
+				this, // World context object			
+				Damage, // BaseDamage
+				Damage * 0.5f, // MinimumDamage
+				GetActorLocation(), // Origin
+				DamageInnerRaius, // DamageInnerRadius
+				DamageOuterRaius, // DamageOuterRadius
+				1.f, // DamageFalloff
+				UDamageType::StaticClass(), // DamageTypeClass
+				TArray<AActor*>(), // IgnoreActors
+				this, // DamageCauser
+				FiringController // InstigatorController
+			);
+		}
+	}
+}
 
