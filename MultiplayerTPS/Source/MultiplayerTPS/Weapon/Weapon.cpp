@@ -13,6 +13,9 @@
 #include "Engine/SkeletalMeshSocket.h"
 #include "MultiplayerTPS/PlayerController/MP_PlayerController.h"
 #include "MultiplayerTPS/DebugHeader.h"
+#include "Blueprint/UserWidget.h"
+
+#include "MultiplayerTPS/DebugHeader.h"
 
 // Sets default values
 AWeapon::AWeapon()
@@ -93,6 +96,33 @@ void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 	{
 		MP_Character->SetOverlappingWeapon(nullptr);
 	}
+}
+
+void AWeapon::ShowScopeWidget_Implementation(bool bIsAiming)
+{
+	/*if (!ScopeWidget && ScopeWidgetClass)
+	{
+		ScopeWidget = CreateWidget<UUserWidget>(OwnerPlayerController, ScopeWidgetClass);
+		ScopeZoomIn = ScopeWidget->GetAnimationByName(TEXT("ScopeZoomIn"));
+		ScopeWidget->AddToViewport();
+	}
+	if (ScopeZoomIn)
+		DebugHeader::Print("ScopeZoomIn true", FColor::Cyan);
+	if (ScopeWidget)
+	{
+		if (bIsAiming)
+		{
+			ScopeWidget->PlayAnimation(ScopeZoomIn, 0.f, 1, EUMGSequencePlayMode::Forward);
+			DebugHeader::Print("ShowScopeWidget true", FColor::Green);
+			ScopeWidget->SetVisibility(ESlateVisibility::Visible);
+		}
+		else
+		{
+			ScopeWidget->PlayAnimation(ScopeZoomIn, 0.f, 1, EUMGSequencePlayMode::Reverse);
+			DebugHeader::Print("ShowScopeWidget false", FColor::Red);
+			ScopeWidget->SetVisibility(ESlateVisibility::Hidden);
+		}	
+	}*/
 }
 
 void AWeapon::SetWeaponState(EWeaponState State)

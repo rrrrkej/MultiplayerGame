@@ -25,6 +25,8 @@ class UTexture2D;
 class AMP_Character;
 class AMP_PlayerController;
 class USoundCue;
+class UWidgetAnimation;
+class UUserWidget;
 
 UCLASS()
 class MULTIPLAYERTPS_API AWeapon : public AActor
@@ -50,6 +52,10 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	USoundCue* EquipSound;
+
+	//	Show Sniper ScopeWidget
+	UFUNCTION(BlueprintNativeEvent)
+	void ShowScopeWidget(bool bIsAiming);
 
 protected:
 	// Called when the game starts or when spawned
@@ -138,6 +144,19 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	EWeaponType WeaponType;
+
+	/**
+	* Scope Widget
+	*/
+	UPROPERTY(EditDefaultsOnly, Category = Weapon)
+	TSubclassOf<UUserWidget> ScopeWidgetClass;
+
+	UPROPERTY()
+	UUserWidget* ScopeWidget;
+
+	UPROPERTY(meta = (BindWidgetAnim))
+	UWidgetAnimation* ScopeZoomIn;
+
 public:
 	/**
 	* Automatic fire

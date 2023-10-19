@@ -43,7 +43,7 @@ public:
 	void MulticastElim();
 	virtual void Destroyed() override;
 
-	//	alter value when MatchState equals to Cooldown 
+	//	true when character state be uncontrollable
 	UPROPERTY(Replicated)
 	bool bDisableGameplay = false;
 

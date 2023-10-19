@@ -192,6 +192,15 @@ void AMP_Character::MulticastElim_Implementation()
 			GetActorLocation()
 			);
 	}
+
+	if (IsLocallyControlled() && 
+		CombatComponent && 
+		CombatComponent->EquippedWeapon && 
+		CombatComponent->EquippedWeapon->GetWeaponType() == EWeaponType::EWT_SniperRifle)
+	{
+
+		CombatComponent->EquippedWeapon->ShowScopeWidget(false);
+	}
 }
 
 void AMP_Character::ElimTimerFinished()
@@ -496,6 +505,11 @@ void AMP_Character::PlayReloadMontage()
 		case EWeaponType::EWT_Shotgun:
 			SectionName = FName("Rifle");
 			break;
+		//	error:没有Shotgun的装弹动画
+		case EWeaponType::EWT_SniperRifle:
+			SectionName = FName("Rifle");
+			break;
+
 		default:
 			break;
 		}
