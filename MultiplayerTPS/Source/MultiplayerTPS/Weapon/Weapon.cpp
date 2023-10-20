@@ -2,20 +2,22 @@
 
 
 #include "Weapon.h"
+
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
-#include "MultiplayerTPS/Character/MP_Character.h"
 #include "Net/UnrealNetWork.h"
 #include "Animation/AnimationAsset.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Casing.h"
 #include "Engine/SkeletalMeshSocket.h"
-#include "MultiplayerTPS/PlayerController/MP_PlayerController.h"
-#include "MultiplayerTPS/DebugHeader.h"
 #include "Blueprint/UserWidget.h"
 
 #include "MultiplayerTPS/DebugHeader.h"
+#include "MultiplayerTPS/MP_Components/CombatComponent.h"
+#include "MultiplayerTPS/PlayerController/MP_PlayerController.h"
+#include "MultiplayerTPS/DebugHeader.h"
+#include "MultiplayerTPS/Character/MP_Character.h"
 
 // Sets default values
 AWeapon::AWeapon()
@@ -33,6 +35,10 @@ AWeapon::AWeapon()
 	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_BLUE);
+	WeaponMesh->MarkRenderStateDirty();
+	EnableCustomDepth(true);
+
 	//construct SphereComponent
 	AreaSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AreaSphere"));
 	AreaSphere->SetupAttachment(RootComponent);
@@ -42,6 +48,14 @@ AWeapon::AWeapon()
 	//construct PickupWidget
 	PickupWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("PickupWidget"));
 	PickupWidget->SetupAttachment(RootComponent);
+}
+
+void AWeapon::EnableCustomDepth(bool bEnable)
+{
+	if (WeaponMesh)
+	{
+		WeaponMesh->SetRenderCustomDepth(bEnable);
+	}
 }
 
 // Called when the game starts or when spawned
@@ -147,6 +161,8 @@ void AWeapon::SetWeaponState(EWeaponState State)
 			WeaponMesh->SetEnableGravity(true);
 			WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 		}
+		//	关闭轮廓光
+		EnableCustomDepth(false);
 		break;
 
 	case EWeaponState::EWS_Dropped:
@@ -159,6 +175,10 @@ void AWeapon::SetWeaponState(EWeaponState State)
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
 		WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
+		//	打开轮廓光
+		WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_BLUE);
+		WeaponMesh->MarkRenderStateDirty();
+		EnableCustomDepth(true);
 		break;
 
 	case EWeaponState::EWS_MAX:
@@ -189,6 +209,8 @@ void AWeapon::OnRep_WeaponState()
 			WeaponMesh->SetEnableGravity(true);
 			WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 		}
+		//	关闭轮廓光
+		EnableCustomDepth(false);
 		break;
 
 	case EWeaponState::EWS_Dropped:
@@ -197,6 +219,10 @@ void AWeapon::OnRep_WeaponState()
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
 		WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
+		//	打开轮廓光
+		WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_BLUE);
+		WeaponMesh->MarkRenderStateDirty();
+		EnableCustomDepth(true);
 		break;
 
 	case EWeaponState::EWS_MAX:
@@ -216,6 +242,13 @@ void AWeapon::SpendRound()
 void AWeapon::OnRep_Ammo()
 {
 	OwnerCharacter = OwnerCharacter == nullptr ? Cast<AMP_Character>(GetOwner()) : OwnerCharacter;
+	
+	//逐壳装填时，装满停止。
+	if (OwnerCharacter && OwnerCharacter->GetCombatComponent() && IsFull() && this->WeaponType == EWeaponType::EWT_Shotgun)
+	{
+		OwnerCharacter->GetCombatComponent()->JumpToShotgunEnd();
+	}
+
 	SetHUDAmmo();
 }
 
@@ -250,6 +283,11 @@ void AWeapon::SetHUDAmmo()
 bool AWeapon::IsEmpty()
 {
 	return Ammo <= 0;
+}
+
+bool AWeapon::IsFull()
+{
+	return Ammo == MagCapacity;
 }
 
 void AWeapon::ShowPickupWidget(bool bShowWidget)
@@ -297,7 +335,7 @@ void AWeapon::Dropped()
 
 void AWeapon::AddAmmo(int32 AmmoToAdd)
 {
-	Ammo = FMath::Clamp(Ammo - AmmoToAdd, 0, MagCapacity);
+	Ammo = FMath::Clamp(Ammo + AmmoToAdd, 0, MagCapacity);
 	SetHUDAmmo();
 }
 

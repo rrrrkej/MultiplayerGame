@@ -2,16 +2,19 @@
 
 
 #include "CombatComponent.h"
+
 #include "MultiplayerTPS/Weapon/Weapon.h"
 #include "MultiplayerTPS/Character/MP_Character.h"
+#include "MultiplayerTPS/PlayerController/MP_PlayerController.h"
+#include "MultiplayerTPS/DebugHeader.h"
+#include "MultiplayerTPS/Character/MP_AnimInstance.h"
+
 #include "Engine/SkeletalMeshSocket.h"
 #include "Components/SphereComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "MultiplayerTPS/DebugHeader.h"
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
-#include "MultiplayerTPS/PlayerController/MP_PlayerController.h"
 #include "Camera/CameraComponent.h"
 #include "TimerManager.h"
 #include "Sound/SoundCue.h"
@@ -288,6 +291,9 @@ void UCombatComponent::FireTimerFinished()
 bool UCombatComponent::CanFire()
 {
 	if (EquippedWeapon == nullptr) return false;
+	//Shotgun特殊装填开火
+	if (!EquippedWeapon->IsEmpty() && bCanFire && CombatState == ECombatState::ECS_Reloading && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun) return true;
+	//通用开火
 	return !EquippedWeapon->IsEmpty() && bCanFire && CombatState == ECombatState::ECS_Unoccupied;
 }
  
@@ -297,6 +303,16 @@ void UCombatComponent::OnRep_CarriedAmmo()
 	if (Controller)
 	{
 		Controller->SetHUDCarriedAmmo(CarriedAmmo);
+	}
+
+	//单发弹药装填时，弹药归零自动停止
+	bool bJumpToShotgunEnd =  CarriedAmmo == 0 &&
+		CombatState == ECombatState::ECS_Reloading &&
+		EquippedWeapon != nullptr &&
+		EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun;
+	if (bJumpToShotgunEnd)
+	{
+		JumpToShotgunEnd();
 	}
 }
 
@@ -308,6 +324,16 @@ void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& Trac
 void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
 {
 	if (EquippedWeapon == nullptr) return;
+	
+	// Shotgun 单发装填开火
+	if (Character && CombatState == ECombatState::ECS_Reloading && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun)
+	{
+		Character->PlayFireMontage(bAiming);
+		EquippedWeapon->Fire(TraceHitTarget);
+		CombatState = ECombatState::ECS_Unoccupied;
+		return;
+	}
+	// 通用开火
 	if (Character && CombatState == ECombatState::ECS_Unoccupied)
 	{
 		Character->PlayFireMontage(bAiming);
@@ -392,21 +418,65 @@ void UCombatComponent::FinishReloading()
 	}
 }
 
+void UCombatComponent::ShotgunShellReload()
+{
+	if (Character && Character->HasAuthority())
+	{
+		UpdateShotgunAmmoValues();
+	}
+}
+
 void UCombatComponent::UpdateAmmoValues()
 {
-	if (EquippedWeapon == nullptr) return;
+	if (Character == nullptr || EquippedWeapon == nullptr) return;
+
 	int32 ReloadAmount = AmountToReload();
 	if (CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType()))
 	{
 		CarriedAmmoMap[EquippedWeapon->GetWeaponType()] -= ReloadAmount;
 		CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()];
 	}
+
+	Controller = Controller == nullptr ? Cast<AMP_PlayerController>(Character->Controller) : Controller;
 	if (Controller)
 	{
 		Controller->SetHUDCarriedAmmo(CarriedAmmo);
 	}
-	EquippedWeapon->AddAmmo(-ReloadAmount);
+	EquippedWeapon->AddAmmo(ReloadAmount);
 
+}
+
+void UCombatComponent::UpdateShotgunAmmoValues()
+{
+	if (CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType()))
+	{
+		CarriedAmmoMap[EquippedWeapon->GetWeaponType()] -= 1;
+		CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()];
+	}
+
+	Controller = Controller == nullptr ? Cast<AMP_PlayerController>(Character->Controller) : Controller;
+	if (Controller)
+	{
+		Controller->SetHUDCarriedAmmo(CarriedAmmo);
+	}
+	EquippedWeapon->AddAmmo(1);
+
+	bCanFire = true;
+	//服务端装满停止
+	if (EquippedWeapon->IsFull() || CarriedAmmo == 0)
+	{
+		JumpToShotgunEnd();
+	}
+	
+}
+
+void UCombatComponent::JumpToShotgunEnd()
+{
+	UAnimInstance* AnimInstance = Character->GetMesh()->GetAnimInstance();
+	if (AnimInstance && Character->GetReloadMontage())
+	{
+		AnimInstance->Montage_JumpToSection(FName("ShotgunEnd"));
+	}
 }
 
 void UCombatComponent::ServerReload_Implementation()
@@ -496,3 +566,5 @@ void UCombatComponent::InitializeCarriedAmmo()
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_SniperRifle, StartingSniperAmmo);
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_GrenadeLauncher, StartingGrenadeLauncherAmmo);
 }
+
+

@@ -41,6 +41,18 @@ void AShotgun::Fire(const FVector& HitTarget)
 				{
 					HitMap.Emplace(MP_Character, 1);
 				}
+
+				//Spawn HitTarget soundcue if hit character
+				if (HitSound)
+				{
+					UGameplayStatics::PlaySoundAtLocation(
+						this,
+						HitSound,
+						FireHit.ImpactPoint,
+						.5f,
+						FMath::FRandRange(-.5f, .5f)
+					);
+				}
 			}
 
 			//	Spawn impact ParticleSystem
@@ -54,17 +66,7 @@ void AShotgun::Fire(const FVector& HitTarget)
 				);
 			}
 
-			//Spawn HitTarget soundcue
-			if (HitSound)
-			{
-				UGameplayStatics::PlaySoundAtLocation(
-					this,
-					HitSound,
-					FireHit.ImpactPoint,
-					.5f,
-					FMath::FRandRange(-.5f, .5f)
-				);
-			}
+			
 		}
 		for (auto HitPair : HitMap)
 		{

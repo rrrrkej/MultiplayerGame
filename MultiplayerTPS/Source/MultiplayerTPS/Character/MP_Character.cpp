@@ -489,29 +489,29 @@ void AMP_Character::PlayReloadMontage()
 		case EWeaponType::EWT_AssaultRifle:
 			SectionName = FName("Rifle");
 			break;
-		//	error:没有RocketLauncher的装弹动画
+		
 		case EWeaponType::EWT_RocketLauncher:
-			SectionName = FName("Rifle");
+			SectionName = FName("RocketLauncher");
 			break;
-		//	error:没有Pistol的装弹动画
+		
 		case EWeaponType::EWT_Pistol:
-			SectionName = FName("Rifle");
+			SectionName = FName("Pistol");
 			break;
-		//	error:没有SMG的装弹动画
+		
 		case EWeaponType::EWT_SubmachineGun:
-			SectionName = FName("Rifle");
+			SectionName = FName("Pistol");
 			break;
-		//	error:没有Shotgun的装弹动画
+		
 		case EWeaponType::EWT_Shotgun:
-			SectionName = FName("Rifle");
+			SectionName = FName("Shotgun");
 			break;
-		//	error:没有Shotgun的装弹动画
+		
 		case EWeaponType::EWT_SniperRifle:
-			SectionName = FName("Rifle");
+			SectionName = FName("SniperRifle");
 			break;
-		//	error:没有Shotgun的装弹动画
+		
 		case EWeaponType::EWT_GrenadeLauncher:
-			SectionName = FName("Rifle");
+			SectionName = FName("GrenadeLauncher");
 			break;
 
 		default:

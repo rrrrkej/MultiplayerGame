@@ -29,8 +29,14 @@ public:
 	void EquipWeapon(AWeapon* WeaponToEquip);
 	void Reload();
 	UFUNCTION(BlueprintCallable)
+
 	void FinishReloading();
 
+	// Shotgun特供装弹函数
+	UFUNCTION(BlueprintCallable)
+	void ShotgunShellReload();
+
+	void JumpToShotgunEnd();
 protected:
 	virtual void BeginPlay() override;
 
@@ -165,6 +171,7 @@ private:
 	void OnRep_CombatState();
 
 	void UpdateAmmoValues();
+	void UpdateShotgunAmmoValues();
 	/**
 	* Equipped Weapon state
 	*/
