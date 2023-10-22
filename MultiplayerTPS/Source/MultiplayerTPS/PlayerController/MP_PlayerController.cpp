@@ -92,9 +92,11 @@ void AMP_PlayerController::OnPossess(APawn* InPawn)
 	if (MP_Character)
 	{
 		SetHUDHealth(MP_Character->GetHealth(), MP_Character->GetMaxHealth());
+		SetHUDGrenades(MP_Character->GetCombatComponent()->GetGrenades());
 	}
 }
 
+#pragma region SetHUD
 void AMP_PlayerController::SetHUDHealth(float Health, float MaxHealth)
 {
 	MP_HUD = MP_HUD == nullptr ? Cast<AMP_HUD>(GetHUD()) : MP_HUD;
@@ -266,6 +268,24 @@ void AMP_PlayerController::SetHUDTime()
 	CountdownInt = SecondsLeft;
 }
 
+void AMP_PlayerController::SetHUDGrenades(int32 GrenadesNum)
+{
+	MP_HUD = MP_HUD == nullptr ? Cast<AMP_HUD>(GetHUD()) : MP_HUD;
+	bool bHUDValid = MP_HUD &&
+		MP_HUD->CharacterOverlay &&
+		MP_HUD->CharacterOverlay->GrenadesText;
+
+	if (bHUDValid)
+	{
+		FString GrenadesText = FString::Printf(TEXT("%d"), GrenadesNum);
+		MP_HUD->CharacterOverlay->GrenadesText->SetText(FText::FromString(GrenadesText));
+	}
+	else
+	{
+		HUDGrenades = GrenadesNum;
+	}
+}
+#pragma endregion
 void AMP_PlayerController::CheckTimeSync(float DeltaTime)
 {
 	TimeSyncRunningTime += DeltaTime;
@@ -288,6 +308,12 @@ void AMP_PlayerController::PollInit()
 				SetHUDHealth(HUDHealth, HUDMaxHealth);
 				SetHUDScore(HUDScore);
 				SetHUDDefeats(HUDDefeats);
+
+				AMP_Character* MP_Character = Cast<AMP_Character>(GetPawn());
+				if (MP_Character && MP_Character->GetCombatComponent())
+				{
+					SetHUDGrenades(MP_Character->GetCombatComponent()->GetGrenades());
+				}
 			}
 		}
 	}

@@ -188,23 +188,32 @@ private:
 
 	TMap<EWeaponType, int32> CarriedAmmoMap;
 
-	//	reserve ammunition
-	UPROPERTY(EditAnywhere)
+	/**
+	* Numbers of weapon and equipment
+	*/
+	UPROPERTY(EditAnywhere, Category = "Ammunition Quantity")
 	int32 StartingARAmmo = 30;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Ammunition Quantity")
 	int32 StartingRocketAmmo = 2;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Ammunition Quantity")
 	int32 StartingPistolAmmo = 36;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Ammunition Quantity")
 	int32 StartingSMGAmmo = 72;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Ammunition Quantity")
 	int32 StartingShotgunAmmo = 18;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Ammunition Quantity")
 	int32 StartingSniperAmmo = 8;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Ammunition Quantity")
 	int32 StartingGrenadeLauncherAmmo = 0;
 
+	UPROPERTY(ReplicatedUsing = OnRep_Grenades,EditAnywhere, Category = "Ammunition Quantity")
+	int32 Grenades = 2;
+	UPROPERTY(EditAnywhere, Category = "Ammunition Quantity")
+	int32 MaxGrenades = 2;
+
 	void InitializeCarriedAmmo();
+	UFUNCTION()
+	void OnRep_Grenades();
 
 	UPROPERTY(ReplicatedUsing = OnRep_CombatState)
 	ECombatState CombatState;
@@ -214,11 +223,15 @@ private:
 
 	void UpdateAmmoValues();
 	void UpdateShotgunAmmoValues();
+	void UpdateHUDGrenades();
+
 	/**
 	* Equipped Weapon state
 	*/
 	bool bAutomaticFire;
 
-	public:
 
+
+	public:
+		FORCEINLINE int32 GetGrenades() const { return Grenades; }
 };
