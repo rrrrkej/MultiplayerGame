@@ -244,7 +244,7 @@ void AWeapon::OnRep_Ammo()
 	OwnerCharacter = OwnerCharacter == nullptr ? Cast<AMP_Character>(GetOwner()) : OwnerCharacter;
 	
 	//Öð¿Ç×°ÌîÊ±£¬×°ÂúÍ£Ö¹¡£
-	if (OwnerCharacter && OwnerCharacter->GetCombatComponent() && IsFull() && this->WeaponType == EWeaponType::EWT_Shotgun)
+	if (OwnerCharacter && OwnerCharacter->GetCombatComponent() && IsMagFull() && this->WeaponType == EWeaponType::EWT_Shotgun)
 	{
 		OwnerCharacter->GetCombatComponent()->JumpToShotgunEnd();
 	}
@@ -285,7 +285,7 @@ bool AWeapon::IsEmpty()
 	return Ammo <= 0;
 }
 
-bool AWeapon::IsFull()
+bool AWeapon::IsMagFull()
 {
 	return Ammo == MagCapacity;
 }
@@ -318,7 +318,7 @@ void AWeapon::Fire(const FVector& HitTarget)
 					SocketTransform.GetRotation().Rotator()
 				);
 			}
-		}
+		}		  
 	}
 	SpendRound();
 }

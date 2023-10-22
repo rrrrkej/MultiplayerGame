@@ -102,7 +102,7 @@ void UMP_AnimInstance::NativeUpdateAnimation(float DeltaTime)
 	* 1.ECombatState:Character state, declare in CombatComponent.h
 	* 2.bDisableGameplay:alter when MatchState change
 	*/
-	bUseFABRIK = MP_Character->GetCombatState() != ECombatState::ECS_Reloading;
-	bUseAimOffsets = MP_Character->GetCombatState() != ECombatState::ECS_Reloading && !MP_Character->GetDisableGameplay();
-	bTransformRightHand = MP_Character->GetCombatState() != ECombatState::ECS_Reloading && !MP_Character->GetDisableGameplay();
+	bUseFABRIK = MP_Character->GetCombatState() == ECombatState::ECS_Unoccupied;
+	bUseAimOffsets = MP_Character->GetCombatState() == ECombatState::ECS_Unoccupied && !MP_Character->GetDisableGameplay();
+	bTransformRightHand = MP_Character->GetCombatState() == ECombatState::ECS_Unoccupied && !MP_Character->GetDisableGameplay();
 }

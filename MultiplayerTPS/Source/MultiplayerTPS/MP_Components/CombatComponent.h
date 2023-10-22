@@ -13,6 +13,7 @@ class AWeapon;
 class AMP_Character;
 class AMP_PlayerController;
 class AMP_HUD;
+class AProjectile;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class MULTIPLAYERTPS_API UCombatComponent : public UActorComponent
@@ -35,8 +36,20 @@ public:
 	// Shotgun特供装弹函数
 	UFUNCTION(BlueprintCallable)
 	void ShotgunShellReload();
-
+	//Shotgun结束装弹
 	void JumpToShotgunEnd();
+
+	// ThrowGrenadeFinished AnimNotify
+	UFUNCTION(BlueprintCallable)
+	void ThrowGrenadeFinished();
+
+	// GernadeLauncher AnimNotify
+	UFUNCTION(BlueprintCallable)
+	void LaunchGrenade();
+
+	UFUNCTION(Server, Reliable)
+	void ServerLauncherGrenade(const FVector_NetQuantize& Target);
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -72,6 +85,35 @@ protected:
 	void HandleReload();
 
 	int32 AmountToReload();
+
+	// InputAction trigger
+	void ThrowGrenade();
+
+	UFUNCTION(Server, Reliable)
+	void ServerThrowGrenade();
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AProjectile> GrenadeClass;
+
+	// Drop EquippedWeapon
+	void DropEquippedWeapon();
+
+	// Attach Actor to Character's RightHand socket
+	void AttachActorToRightHand(AActor* ActorToAttach);
+	// Attach Actor to Character's RightHand socket
+	void AttachActorToLeftHand(AActor* ActorToAttach);
+
+	// Set CarriedAmmo and update HUD
+	void UpdateCarriedAmmo();
+
+	// Play EquipWeapon sound
+	void PlayEquipWeaponSound();
+
+	// Reload Weapon if empty
+	void ReloadEmptyWeapon();
+
+	// Alther AttachedGrenade visibility
+	void ShowAttachedGrenade(bool bShowGrenade);
 private:
 	UPROPERTY()
 	AMP_Character* Character;

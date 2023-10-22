@@ -75,6 +75,11 @@ AMP_Character::AMP_Character()
 
 	// Construct TimelineComponent
 	DissolveTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("DissolveTimelineComponent"));
+
+	// Construct GrenadeComponent
+	AttachedGrenade = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Attached Grenade"));
+	AttachedGrenade->SetupAttachment(GetMesh(), FName("GrenadeSocket"));
+	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void AMP_Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -294,6 +299,12 @@ void AMP_Character::BeginPlay()
 	if (HasAuthority())
 	{
 		OnTakeAnyDamage.AddDynamic(this, &AMP_Character::ReceiveDamage);
+	}
+
+	//Gamestart default settings
+	if (AttachedGrenade)
+	{
+		AttachedGrenade->SetVisibility(false);
 	}
 }
 
@@ -545,6 +556,16 @@ void AMP_Character::PlayElimMontage()
 	}
 }
 
+void AMP_Character::PlayThrowGrenadeMontage()
+{
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && ThrowGrenadeMontage)
+	{
+		AnimInstance->Montage_Play(ThrowGrenadeMontage);
+	}
+}
+
 //called by server
 void AMP_Character::SetOverlappingWeapon(AWeapon* Weapon)
 {
@@ -658,6 +679,9 @@ void AMP_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 
 		//Reload
 		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &AMP_Character::Reload);
+
+		//Throw grenade
+		EnhancedInputComponent->BindAction(ThrowGrenadeAction, ETriggerEvent::Triggered, this, &AMP_Character::ThrowGrenade);
 	}
 }
 
@@ -796,6 +820,14 @@ void AMP_Character::Reload(const FInputActionValue& Value)
 	if (CombatComponent)
 	{
 		CombatComponent->Reload();
+	}
+}
+
+void AMP_Character::ThrowGrenade(const FInputActionValue& Value)
+{
+	if (CombatComponent && CombatComponent->EquippedWeapon)
+	{
+		CombatComponent->ThrowGrenade();
 	}
 }
 
