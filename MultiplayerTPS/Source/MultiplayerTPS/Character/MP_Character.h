@@ -124,7 +124,7 @@ private:
 
 	AMP_PlayerController* MP_PlayerController;
 
-	bool bElimmed = false;
+	bool bElimmed = false; // true when Elimmed
 
 	/**
 	* Timerhandle of RespawnCharacter

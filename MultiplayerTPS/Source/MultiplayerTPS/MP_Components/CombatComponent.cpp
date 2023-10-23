@@ -399,7 +399,7 @@ void UCombatComponent::UpdateCarriedAmmo()
 	if (EquippedWeapon == nullptr) return;
 	if (CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType()))
 	{
-		CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()];
+		CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()][0];
 	}
 
 	Controller = Controller == nullptr ? Cast<AMP_PlayerController>(Character->Controller) : Controller;
@@ -439,6 +439,19 @@ void UCombatComponent::Reload()
 	}
 }
 
+void UCombatComponent::ServerReload_Implementation()
+{
+	if (Character == nullptr || EquippedWeapon == nullptr) return;
+
+	CombatState = ECombatState::ECS_Reloading;
+	HandleReload();
+}
+
+void UCombatComponent::HandleReload()
+{
+	Character->PlayReloadMontage();
+}
+
 void UCombatComponent::FinishReloading()
 {
 	if (Character == nullptr) return;
@@ -470,8 +483,8 @@ void UCombatComponent::UpdateAmmoValues()
 	int32 ReloadAmount = AmountToReload();
 	if (CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType()))
 	{
-		CarriedAmmoMap[EquippedWeapon->GetWeaponType()] -= ReloadAmount;
-		CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()];
+		CarriedAmmoMap[EquippedWeapon->GetWeaponType()][0] -= ReloadAmount;
+		CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()][0];
 	}
 
 	Controller = Controller == nullptr ? Cast<AMP_PlayerController>(Character->Controller) : Controller;
@@ -487,8 +500,8 @@ void UCombatComponent::UpdateShotgunAmmoValues()
 {
 	if (CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType()))
 	{
-		CarriedAmmoMap[EquippedWeapon->GetWeaponType()] -= 1;
-		CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()];
+		CarriedAmmoMap[EquippedWeapon->GetWeaponType()][0] -= 1;
+		CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()][0];
 	}
 
 	Controller = Controller == nullptr ? Cast<AMP_PlayerController>(Character->Controller) : Controller;
@@ -515,14 +528,6 @@ void UCombatComponent::JumpToShotgunEnd()
 		AnimInstance->Montage_JumpToSection(FName("ShotgunEnd"));
 	}
 }
-
-void UCombatComponent::ServerReload_Implementation()
-{
-	if (Character == nullptr || EquippedWeapon == nullptr) return;
-
-	CombatState = ECombatState::ECS_Reloading;
-	HandleReload();
-} 
 
 void UCombatComponent::OnRep_CombatState()
 {
@@ -554,13 +559,6 @@ void UCombatComponent::OnRep_CombatState()
 	}
 }
 
-
-
-void UCombatComponent::HandleReload()
-{
-	Character->PlayReloadMontage();
-}
-
 int32 UCombatComponent::AmountToReload()
 {
 	if (EquippedWeapon == nullptr) return 0;
@@ -568,7 +566,7 @@ int32 UCombatComponent::AmountToReload()
 
 	if (CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType()))
 	{
-		int32 AmountCarried = CarriedAmmoMap[EquippedWeapon->GetWeaponType()];
+		int32 AmountCarried = CarriedAmmoMap[EquippedWeapon->GetWeaponType()][0];
 		int32 Least = FMath::Min(RoomInMag, AmountCarried);
 		return FMath::Clamp(RoomInMag, 0, Least);
 	}
@@ -590,13 +588,13 @@ void UCombatComponent::OnRep_EquippedWeapon()
 
 void UCombatComponent::InitializeCarriedAmmo()
 {
-	CarriedAmmoMap.Emplace(EWeaponType::EWT_AssaultRifle, StartingARAmmo);
-	CarriedAmmoMap.Emplace(EWeaponType::EWT_RocketLauncher, StartingRocketAmmo);
-	CarriedAmmoMap.Emplace(EWeaponType::EWT_Pistol, StartingPistolAmmo);
-	CarriedAmmoMap.Emplace(EWeaponType::EWT_SubmachineGun, StartingSMGAmmo);
-	CarriedAmmoMap.Emplace(EWeaponType::EWT_Shotgun, StartingShotgunAmmo);
-	CarriedAmmoMap.Emplace(EWeaponType::EWT_SniperRifle, StartingSniperAmmo);
-	CarriedAmmoMap.Emplace(EWeaponType::EWT_GrenadeLauncher, StartingGrenadeLauncherAmmo);
+	CarriedAmmoMap.Emplace(EWeaponType::EWT_AssaultRifle, TArray<int32>{StartingARAmmo, MaxARAmmo});
+	CarriedAmmoMap.Emplace(EWeaponType::EWT_RocketLauncher, TArray<int32>{StartingRocketAmmo, MaxRocketAmmo});
+	CarriedAmmoMap.Emplace(EWeaponType::EWT_Pistol, TArray<int32>{StartingPistolAmmo, MaxPistolAmmo});
+	CarriedAmmoMap.Emplace(EWeaponType::EWT_SubmachineGun, TArray<int32>{StartingSMGAmmo, MaxSMGAmmo});
+	CarriedAmmoMap.Emplace(EWeaponType::EWT_Shotgun, TArray<int32>{StartingShotgunAmmo, MaxShotgunAmmo});
+	CarriedAmmoMap.Emplace(EWeaponType::EWT_SniperRifle, TArray<int32>{StartingSniperAmmo, MaxSniperAmmo});
+	CarriedAmmoMap.Emplace(EWeaponType::EWT_GrenadeLauncher, TArray<int32>{StartingGrenadeLauncherAmmo, MaxGrenadeLauncherAmmo});
 }
 
 #pragma region GrenadeRelatived
@@ -695,3 +693,19 @@ void UCombatComponent::OnRep_Grenades()
 	UpdateHUDGrenades();
 }
 #pragma endregion
+
+void UCombatComponent::PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount)
+{
+	if (CarriedAmmoMap.Contains(WeaponType))
+	{
+		// limit carried ammo
+		CarriedAmmoMap[WeaponType][0] = FMath::Clamp(CarriedAmmoMap[WeaponType][0] + AmmoAmount, 0, CarriedAmmoMap[WeaponType][1]);
+		// update equipped weapon ammo and HUD
+		UpdateCarriedAmmo();
+	}
+
+	if (EquippedWeapon && EquippedWeapon->IsEmpty() && EquippedWeapon->GetWeaponType() == WeaponType)
+	{
+		Reload();
+	}
+}

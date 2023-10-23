@@ -92,7 +92,7 @@ void AMP_PlayerController::OnPossess(APawn* InPawn)
 	if (MP_Character)
 	{
 		SetHUDHealth(MP_Character->GetHealth(), MP_Character->GetMaxHealth());
-		SetHUDGrenades(MP_Character->GetCombatComponent()->GetGrenades());
+		SetHUDGrenades(MP_Character->GetCombatComponent()->GetGrenades()); // 用来复活更新HUD
 	}
 }
 

@@ -50,6 +50,9 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerLauncherGrenade(const FVector_NetQuantize& Target);
 
+	// called in AmmoPickup::OnSphereOverlap()
+	void PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount);
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -64,6 +67,7 @@ public:
 	void FireButtonpressed(bool bPressed);
 
 protected:
+	// processing fire in server
 	void Fire();
 
 	UFUNCTION(Server, Reliable)
@@ -114,6 +118,7 @@ protected:
 
 	// Alther AttachedGrenade visibility
 	void ShowAttachedGrenade(bool bShowGrenade);
+
 private:
 	UPROPERTY()
 	AMP_Character* Character;
@@ -186,25 +191,43 @@ private:
 	UFUNCTION()
 	void OnRep_CarriedAmmo();
 
-	TMap<EWeaponType, int32> CarriedAmmoMap;
+	/*	First key is current equipped weapon ammo, 
+		Second key is current equipped weapon Max ammo amount
+	*/	
+	TMap<EWeaponType, TArray<int32>> CarriedAmmoMap;
 
 	/**
 	* Numbers of weapon and equipment
 	*/
-	UPROPERTY(EditAnywhere, Category = "Ammunition Quantity")
+	UPROPERTY(EditAnywhere, Category = "Ammunition Amount")
 	int32 StartingARAmmo = 30;
-	UPROPERTY(EditAnywhere, Category = "Ammunition Quantity")
+	UPROPERTY(EditAnywhere, Category = "Ammunition Amount")
 	int32 StartingRocketAmmo = 2;
-	UPROPERTY(EditAnywhere, Category = "Ammunition Quantity")
-	int32 StartingPistolAmmo = 36;
-	UPROPERTY(EditAnywhere, Category = "Ammunition Quantity")
+	UPROPERTY(EditAnywhere, Category = "Ammunition Amount")
+	int32 StartingPistolAmmo = 24;
+	UPROPERTY(EditAnywhere, Category = "Ammunition Amount")
 	int32 StartingSMGAmmo = 72;
-	UPROPERTY(EditAnywhere, Category = "Ammunition Quantity")
+	UPROPERTY(EditAnywhere, Category = "Ammunition Amount")
 	int32 StartingShotgunAmmo = 18;
-	UPROPERTY(EditAnywhere, Category = "Ammunition Quantity")
+	UPROPERTY(EditAnywhere, Category = "Ammunition Amount")
 	int32 StartingSniperAmmo = 8;
-	UPROPERTY(EditAnywhere, Category = "Ammunition Quantity")
+	UPROPERTY(EditAnywhere, Category = "Ammunition Amount")
 	int32 StartingGrenadeLauncherAmmo = 0;
+
+	UPROPERTY(EditAnywhere, Category = "Ammunition Amount")
+	int32 MaxARAmmo = 180;
+	UPROPERTY(EditAnywhere, Category = "Ammunition Amount")
+	int32 MaxRocketAmmo = 8;
+	UPROPERTY(EditAnywhere, Category = "Ammunition Amount")
+	int32 MaxPistolAmmo = 60;
+	UPROPERTY(EditAnywhere, Category = "Ammunition Amount")
+	int32 MaxSMGAmmo = 288;
+	UPROPERTY(EditAnywhere, Category = "Ammunition Amount")
+	int32 MaxShotgunAmmo = 36;
+	UPROPERTY(EditAnywhere, Category = "Ammunition Amount")
+	int32 MaxSniperAmmo = 8;
+	UPROPERTY(EditAnywhere, Category = "Ammunition Amount")
+	int32 MaxGrenadeLauncherAmmo = 6;
 
 	UPROPERTY(ReplicatedUsing = OnRep_Grenades,EditAnywhere, Category = "Ammunition Quantity")
 	int32 Grenades = 2;
