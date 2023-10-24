@@ -110,6 +110,10 @@ void AMP_Character::PostInitializeComponents()
 	if (BuffComponent)
 	{
 		BuffComponent->Character = this;
+		BuffComponent->SetInitialSpeed(
+			GetCharacterMovement()->MaxWalkSpeed, 
+			GetCharacterMovement()->MaxWalkSpeedCrouched);
+		BuffComponent->SetInitialJumpVelocity(GetCharacterMovement()->JumpZVelocity);
 	}
 }
 
@@ -669,7 +673,7 @@ void AMP_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent)) {
 
 		//Jumping
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &AMP_Character::Jump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &AMP_Character::JumpPressed);
 
 		//Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AMP_Character::Move);
@@ -681,7 +685,7 @@ void AMP_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &AMP_Character::Interaction);
 
 		//Crouch
-		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Triggered, this, &AMP_Character::Crouch);
+		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Triggered, this, &AMP_Character::CrouchPressed);
 
 		//Aim
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Triggered, this, &AMP_Character::Aim);
@@ -736,7 +740,7 @@ void AMP_Character::Look(const FInputActionValue& Value)
 	}
 }
 
-void AMP_Character::Jump(const FInputActionValue& Value)
+void AMP_Character::JumpPressed(const FInputActionValue& Value)
 {
 	if (bDisableGameplay) return;
 
@@ -768,7 +772,7 @@ void AMP_Character::Interaction(const FInputActionValue& Value)
 	}
 }
 
-void AMP_Character::Crouch(const FInputActionValue& Value)
+void AMP_Character::CrouchPressed(const FInputActionValue& Value)
 {
 	if (bDisableGameplay) return;
 

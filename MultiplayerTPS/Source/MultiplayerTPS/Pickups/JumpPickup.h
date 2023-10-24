@@ -4,18 +4,15 @@
 
 #include "CoreMinimal.h"
 #include "Pickup.h"
-#include "HealthPickup.generated.h"
+#include "JumpPickup.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class MULTIPLAYERTPS_API AHealthPickup : public APickup
+class MULTIPLAYERTPS_API AJumpPickup : public APickup
 {
 	GENERATED_BODY()
-	
-public:
-	AHealthPickup();
 
 protected:
 	virtual void OnSphereOverlap(
@@ -28,10 +25,9 @@ protected:
 
 private:
 	UPROPERTY(EditAnywhere)
-	float HealthAmount = 100.f;	//	回复总生命值
+	float JumpZVelocityBuff = 1500.f;
 
 	UPROPERTY(EditAnywhere)
-	float HealingTime = 5.f;	//	回复时间
+	float JumpBuffTime = 15.f;
 
-	
 };

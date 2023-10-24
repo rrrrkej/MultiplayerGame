@@ -8,6 +8,8 @@
 
 class USphereComponent;
 class USoundCue;
+class UNiagaraComponent;
+class UNiagaraSystem;
 
 UCLASS()
 class MULTIPLAYERTPS_API APickup : public AActor
@@ -43,7 +45,11 @@ private:
 	UPROPERTY(EditAnywhere)
 	USoundCue* PickupSound;		// Pickup sound
 
-	
+	UPROPERTY(VisibleAnywhere)
+	UNiagaraComponent* PickupEffectComponent;		// 掉落物Niagara效果
+
+	UPROPERTY(EditAnywhere)
+	UNiagaraSystem* PickupEffect;	//	拾取效果
 
 public:	
 

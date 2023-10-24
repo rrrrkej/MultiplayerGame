@@ -253,13 +253,13 @@ protected:
 	void Look(const FInputActionValue& Value);
 
 	/** Called for jump */
-	void Jump(const FInputActionValue& Value);
+	void JumpPressed(const FInputActionValue& Value);
 
 	/** Called for Interaction */
 	void Interaction(const FInputActionValue& Value);
 
 	/** Called for Crouch */
-	void Crouch(const FInputActionValue& Value);
+	void CrouchPressed(const FInputActionValue& Value);
 
 	/**Called for Aim */
 	void Aim(const FInputActionValue& Value);

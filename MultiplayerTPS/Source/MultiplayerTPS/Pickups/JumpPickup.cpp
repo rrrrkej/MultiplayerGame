@@ -1,18 +1,11 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "HealthPickup.h"
+#include "JumpPickup.h"
 #include "MultiplayerTPS/Character/MP_Character.h"
 #include "MultiplayerTPS/MP_Components/BuffComponent.h"
 
-
-AHealthPickup::AHealthPickup()
-{
-	bReplicates = true;
-	
-}
-
-void AHealthPickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void AJumpPickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	Super::OnSphereOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
 
@@ -22,7 +15,7 @@ void AHealthPickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AA
 		UBuffComponent* BuffComponent = MP_Character->GetBuffComponent();
 		if (BuffComponent)
 		{
-			BuffComponent->Heal(HealthAmount, HealingTime);
+			BuffComponent->BuffJump(JumpZVelocityBuff, JumpBuffTime);
 		}
 
 	}
