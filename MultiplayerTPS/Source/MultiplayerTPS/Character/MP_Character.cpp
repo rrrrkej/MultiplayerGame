@@ -4,27 +4,28 @@
 #include "MP_Character.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
-#include "../DebugHeader.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Net/UnrealNetwork.h"
-#include "MultiplayerTPS/Weapon/Weapon.h"
-#include "MultiplayerTPS/MP_Components/CombatComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Timermanager.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
+
+#include "particles/ParticleSystemComponent.h"
+#include "MultiplayerTPS/PlayerState/MP_PlayerState.h"
+#include "MultiplayerTPS/Weapon/WeaponTypes.h"
+#include "MultiplayerTPS/Weapon/Weapon.h"
+#include "MultiplayerTPS/MP_Components/CombatComponent.h"
+#include "MultiplayerTPS/MP_Components/BuffComponent.h"
 #include "MultiplayerTPS/Character/MP_AnimInstance.h"
 #include "MultiplayerTPS/MultiplayerTPS.h"
 #include "MultiplayerTPS/PlayerController/MP_PlayerController.h"
 #include "MultiplayerTPS/GameMode/MP_GameMode.h"
-#include "Timermanager.h"
-#include "Kismet/GameplayStatics.h"
-#include "Sound/SoundCue.h"
-#include "particles/ParticleSystemComponent.h"
-#include "MultiplayerTPS/PlayerState/MP_PlayerState.h"
-#include "MultiplayerTPS/Weapon/WeaponTypes.h"
-
+#include "../DebugHeader.h"
 // Sets default values
 AMP_Character::AMP_Character()
 {
@@ -32,6 +33,7 @@ AMP_Character::AMP_Character()
 	PrimaryActorTick.bCanEverTick = true;
 
 	// Initialize Character setting
+	// 生成时的碰撞处理策略，如果检测到了碰撞，则会查找附近没有碰撞的位置进行生成
 	SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
 	// initialize CameraBoom attribute
@@ -56,6 +58,10 @@ AMP_Character::AMP_Character()
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 	CombatComponent->SetIsReplicated(true);
 	
+	// construct BuffComponent
+	BuffComponent = CreateDefaultSubobject<UBuffComponent>(TEXT("BuffComponent"));
+	BuffComponent->SetIsReplicated(true);
+
 	// Set properties in CMC
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 0.f, 720.f);
@@ -100,6 +106,10 @@ void AMP_Character::PostInitializeComponents()
 	if (CombatComponent)
 	{
 		CombatComponent->Character = this;
+	}
+	if (BuffComponent)
+	{
+		BuffComponent->Character = this;
 	}
 }
 
@@ -347,10 +357,13 @@ float AMP_Character::CalculateSpeed()
 	return Velocity.Size();
 }
 
-void AMP_Character::OnRep_Health()
+void AMP_Character::OnRep_Health(float LastHealth)
 {
-	PlayHitReactMontage();
 	UpdateHUDHealth();
+	if (Health < LastHealth)
+	{
+		PlayHitReactMontage();
+	}
 }
 
 void AMP_Character::UpdateHUDHealth()

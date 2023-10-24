@@ -150,18 +150,6 @@ private:
 	UPROPERTY(EditAnywhere)
 	EWeaponType WeaponType;
 
-	/**
-	* Scope Widget
-	*/
-	UPROPERTY(EditDefaultsOnly, Category = Weapon)
-	TSubclassOf<UUserWidget> ScopeWidgetClass;
-
-	UPROPERTY()
-	UUserWidget* ScopeWidget;
-
-	UPROPERTY(meta = (BindWidgetAnim))
-	UWidgetAnimation* ScopeZoomIn;
-
 public:
 	/**
 	* Automatic fire

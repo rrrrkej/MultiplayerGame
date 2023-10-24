@@ -5,7 +5,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 #include "Components/SphereComponent.h"
-
+#include "MultiplayerTPS/Weapon/WeaponTypes.h"
 // Sets default values
 APickup::APickup()
 {
@@ -19,7 +19,7 @@ APickup::APickup()
 	
 	OverlapSphere = CreateDefaultSubobject<USphereComponent>(TEXT("OverlapSphere")); // Hand pickup range
 	OverlapSphere->SetupAttachment(RootComponent);
-	OverlapSphere->SetSphereRadius(150.f);
+	OverlapSphere->SetSphereRadius(40.f);
 	OverlapSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	OverlapSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	OverlapSphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);

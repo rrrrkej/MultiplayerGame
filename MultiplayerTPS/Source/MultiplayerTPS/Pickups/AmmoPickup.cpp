@@ -4,6 +4,8 @@
 #include "AmmoPickup.h"
 #include "MultiplayerTPS/Character/MP_Character.h"
 #include "MultiplayerTPS/MP_Components/CombatComponent.h"
+#include "MultiplayerTPS/Weapon/WeaponTypes.h"
+#include "MultiplayerTPS/DebugHeader.h"
 
 AAmmoPickup::AAmmoPickup()
 {
@@ -15,6 +17,7 @@ AAmmoPickup::AAmmoPickup()
 
 void AAmmoPickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	
 	Super::OnSphereOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
 
 	AMP_Character* MP_Character = Cast<AMP_Character>(OtherActor);
@@ -22,9 +25,23 @@ void AAmmoPickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AAct
 	{
 		UCombatComponent* CombatComponent = MP_Character->GetCombatComponent();
 		if (CombatComponent)
-		{
-			CombatComponent->PickupAmmo(WeaponType, AmmoAmount);
+		{ 
+			// Add  all kinds of ammo
+			if (bAmmoGroup)
+			{
+				for (int32 i = 0; i < (int32)EWeaponType::EWT_MAX; ++i)
+				{
+					WeaponType = static_cast<EWeaponType>(i);
+					AmmoAmount = (int32)round(CombatComponent->GetCarriedAmmoMap()[WeaponType][1] * GroupAmmoPick);
+					CombatComponent->PickupAmmo(WeaponType, AmmoAmount);
+				}
+			}
+			else
+			{
+				CombatComponent->PickupAmmo(WeaponType, AmmoAmount);
+			}
 		}
+		
 	}
 	Destroy();
 }

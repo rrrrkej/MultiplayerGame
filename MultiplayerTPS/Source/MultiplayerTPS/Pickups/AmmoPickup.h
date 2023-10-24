@@ -33,4 +33,11 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = AmmoProperties)
 	EWeaponType WeaponType;
+
+	UPROPERTY(EditAnywhere, Category = AmmoProperties)
+	bool bAmmoGroup = 0;
+
+	UPROPERTY(EditAnywhere, Category = AmmoProperties)
+	float GroupAmmoPick = 0.5f;	//	Percentage  of Recovered Ammo Group
 };
+

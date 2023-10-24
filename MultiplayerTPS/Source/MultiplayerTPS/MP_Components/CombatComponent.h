@@ -10,7 +10,6 @@
 #include "CombatComponent.generated.h"
 
 class AWeapon;
-class AMP_Character;
 class AMP_PlayerController;
 class AMP_HUD;
 class AProjectile;
@@ -256,5 +255,6 @@ private:
 
 
 	public:
-		FORCEINLINE int32 GetGrenades() const { return Grenades; }
+		FORCEINLINE int32 GetGrenades() const { return Grenades; }	// return number of grenade
+		FORCEINLINE TMap<EWeaponType, TArray<int32>> GetCarriedAmmoMap() const { return CarriedAmmoMap; }	// return CarriedAmmoMap
 };
