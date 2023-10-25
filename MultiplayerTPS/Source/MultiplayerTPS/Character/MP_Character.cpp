@@ -130,7 +130,15 @@ void AMP_Character::Elim()
 {
 	if (CombatComponent && CombatComponent->EquippedWeapon)
 	{
-		CombatComponent->EquippedWeapon->Dropped();
+		//	Destroy default weapon when elimmed
+		if (CombatComponent->EquippedWeapon->bDestroyWeapon)
+		{
+			CombatComponent->EquippedWeapon->Destroy();
+		}
+		else
+		{
+			CombatComponent->EquippedWeapon->Dropped();
+		}
 	}
 
 	MulticastElim();
@@ -306,7 +314,12 @@ void AMP_Character::RotateInPlace(float DeltaTime)
 // Called when the game starts or when spawned
 void AMP_Character::BeginPlay()
 {
+	
 	Super::BeginPlay();
+	
+	//	Spawn default weapon at beginning
+	SpawnDefaultWeapon();
+	UpdateHUDAmmo();
 
 	// Initialzied properties in HUD
 	UpdateHUDHealth();
@@ -376,7 +389,7 @@ void AMP_Character::OnRep_Health(float LastHealth)
 void AMP_Character::OnRep_Shield(float LastShield)
 {
 	UpdateHUDShield();
-	if (Health < LastShield)
+	if (Shield < LastShield)
 	{
 		PlayHitReactMontage();
 	}
@@ -397,6 +410,16 @@ void AMP_Character::UpdateHUDShield()
 	if (MP_PlayerController)
 	{
 		MP_PlayerController->SetHUDShield(Shield, MaxShield);
+	}
+}
+
+void AMP_Character::UpdateHUDAmmo()
+{
+	MP_PlayerController = MP_PlayerController == nullptr ? Cast<AMP_PlayerController>(Controller) : MP_PlayerController;
+	if (MP_PlayerController && CombatComponent && CombatComponent->EquippedWeapon)
+	{
+		MP_PlayerController->SetHUDCarriedAmmo(CombatComponent->CarriedAmmo);
+		MP_PlayerController->SetHUDWeaponAmmo(CombatComponent->EquippedWeapon->GetAmmo());
 	}
 }
 
@@ -692,6 +715,21 @@ FVector AMP_Character::GetHitTarget() const
 
 	if (CombatComponent == nullptr) return FVector();
 	return CombatComponent->HitTarget;
+}
+
+void AMP_Character::SpawnDefaultWeapon()
+{
+	AMP_GameMode* MP_GameMode = Cast<AMP_GameMode>(UGameplayStatics::GetGameMode(this));
+	UWorld* World = GetWorld();
+	if (MP_GameMode && World && !bElimmed && DefaultWeaponClass)
+	{
+		AWeapon* StartingWeapon = World->SpawnActor<AWeapon>(DefaultWeaponClass);
+		StartingWeapon->bDestroyWeapon = true;
+		if (CombatComponent)
+		{
+			CombatComponent->EquipWeapon(StartingWeapon);
+		}
+	}
 }
 
 #pragma region InputBinding

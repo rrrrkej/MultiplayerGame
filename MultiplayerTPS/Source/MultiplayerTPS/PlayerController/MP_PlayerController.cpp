@@ -195,6 +195,11 @@ void AMP_PlayerController::SetHUDWeaponAmmo(int32 Ammo)
 		FString AmmoText = FString::Printf(TEXT("%d"), Ammo);
 		MP_HUD->CharacterOverlay->WeaponAmmoAmount->SetText(FText::FromString(AmmoText));
 	}
+	else
+	{
+		bInitializeWeaponAmmo = true;
+		HUDWeaponAmmo = Ammo;
+	}
 }
 
 void AMP_PlayerController::SetHUDCarriedAmmo(int32 Ammo)
@@ -208,6 +213,11 @@ void AMP_PlayerController::SetHUDCarriedAmmo(int32 Ammo)
 	{
 		FString AmmoText = FString::Printf(TEXT("%d"), Ammo);
 		MP_HUD->CharacterOverlay->CarriedAmmoAmount->SetText(FText::FromString(AmmoText));
+	}
+	else
+	{
+		bInitializeCarriedAmmo = true;
+		HUDCarriedAmmo = Ammo;
 	}
 }
 
@@ -329,11 +339,36 @@ void AMP_PlayerController::PollInit()
 			CharacterOverlay = MP_HUD->CharacterOverlay;
 			if (CharacterOverlay)
 			{
-				if (bInitializeHealth)	SetHUDHealth(HUDHealth, HUDMaxHealth);
-				if (bInitializeShield)	SetHUDShield(HUDShield, HUDMaxShield);
-				if (bInitializeScore)	SetHUDScore(HUDScore);
-				if (bInitializeDefeats)	SetHUDDefeats(HUDDefeats);
-				
+				if (bInitializeHealth)
+				{
+					bInitializeHealth = false; 
+					SetHUDHealth(HUDHealth, HUDMaxHealth);
+				}
+				if (bInitializeShield)
+				{
+					bInitializeShield = false;
+					SetHUDShield(HUDShield, HUDMaxShield);
+				}
+				if (bInitializeScore)
+				{
+					bInitializeScore = false;
+					SetHUDScore(HUDScore);
+				}
+				if (bInitializeDefeats)
+				{
+					bInitializeDefeats = false;
+					SetHUDDefeats(HUDDefeats);
+				}
+				if (bInitializeCarriedAmmo) 
+				{
+					bInitializeCarriedAmmo = false;
+					SetHUDCarriedAmmo(HUDCarriedAmmo);
+				}
+				if (bInitializeWeaponAmmo) 
+				{
+					bInitializeWeaponAmmo = false;
+					SetHUDWeaponAmmo(HUDWeaponAmmo);
+				}
 				AMP_Character* MP_Character = Cast<AMP_Character>(GetPawn());
 				if (MP_Character && MP_Character->GetCombatComponent() && bInitializeGrenades)
 				{

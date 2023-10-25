@@ -98,17 +98,30 @@ private:
 	UPROPERTY()
 	UCharacterOverlay* CharacterOverlay;
 
+	/*
+	* Initialize value settings
+	*/
 	float HUDHealth;
 	bool bInitializeHealth = false;
+
 	float HUDMaxHealth;
 	float HUDShield;
 	bool bInitializeShield = false;
+
 	float HUDMaxShield;
 	float HUDScore;
 	bool bInitializeScore = false;
+
 	int32 HUDDefeats;
 	bool bInitializeDefeats = false;
+
 	int32 HUDGrenades;
 	bool bInitializeGrenades = false;
 	
+	float HUDCarriedAmmo;
+	bool bInitializeCarriedAmmo = false;
+	float HUDWeaponAmmo;
+	bool bInitializeWeaponAmmo = false;
+	
+
 };

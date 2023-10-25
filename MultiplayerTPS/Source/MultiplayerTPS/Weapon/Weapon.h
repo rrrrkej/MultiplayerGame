@@ -62,6 +62,8 @@ public:
 	*/
 	void EnableCustomDepth(bool bEnable);
 
+	//	true when spawn as default weapon
+	bool bDestroyWeapon = false;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

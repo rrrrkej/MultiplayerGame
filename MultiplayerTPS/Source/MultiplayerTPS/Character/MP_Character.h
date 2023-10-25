@@ -51,6 +51,10 @@ public:
 	//	Update  HUD
 	void UpdateHUDHealth();
 	void UpdateHUDShield();
+	void UpdateHUDAmmo();
+
+	//	Spawn default weapon at beginning
+	void SpawnDefaultWeapon();
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -67,6 +71,7 @@ protected:
 	void PollInit();
 	// Founction for Rotate In Place feature
 	void RotateInPlace(float DeltaTime);
+
 private:
 
 	UPROPERTY(VisibleAnywhere, Category = Camera)
@@ -185,6 +190,18 @@ private:
 	UPROPERTY()
 	AMP_PlayerState* MP_PlayerState;
 
+	/**
+	* Grenade
+	*/
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* AttachedGrenade;
+
+	/**
+	* Default weaopn
+	*/
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AWeapon> DefaultWeaponClass;
 #pragma region AnimMontage
 private:
 	UPROPERTY(EditAnywhere, Category = AnimMontage)
@@ -202,12 +219,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = AnimMontage)
 	UAnimMontage* ThrowGrenadeMontage;
 
-	/**
-	* Grenade
-	*/
 
-	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* AttachedGrenade;
 public:
 	void PlayFireMontage(bool bAiming);
 	void PlayReloadMontage();
