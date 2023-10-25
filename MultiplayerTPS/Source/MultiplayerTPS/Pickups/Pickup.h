@@ -38,6 +38,7 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* PickupMesh;	// Display staticmesh
+
 private:
 	UPROPERTY(EditAnywhere)
 	USphereComponent* OverlapSphere;	// Hand pickup range
@@ -51,8 +52,9 @@ private:
 	UPROPERTY(EditAnywhere)
 	UNiagaraSystem* PickupEffect;	//	Ê°È¡Ð§¹û
 
-public:	
-
-	
+	// Timer to delay collision before Bind delegate
+	FTimerHandle BindOverlapTimer;
+	float BindOverlapTime = 0.25f;
+	void BindOverlapTimerFinished();
 
 };

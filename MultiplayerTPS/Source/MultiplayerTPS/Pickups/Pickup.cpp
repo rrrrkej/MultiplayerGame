@@ -8,6 +8,10 @@
 #include "MultiplayerTPS/Weapon/WeaponTypes.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
+#include "TimerManager.h"
+#include "MultiplayerTPS/Character/MP_Character.h"
+#include "GameFramework/Actor.h"
+
 // Sets default values
 APickup::APickup()
 {
@@ -32,16 +36,23 @@ APickup::APickup()
 
 	PickupEffectComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("PickupEffectComponent"));
 	PickupEffectComponent->SetupAttachment(RootComponent);
+
+	// Spawn collision handing
+	SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 }
 
 void APickup::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	// processing in server
 	if (HasAuthority())
 	{
-		OverlapSphere->OnComponentBeginOverlap.AddDynamic(this, &APickup::OnSphereOverlap);
+		GetWorldTimerManager().SetTimer(
+			BindOverlapTimer,
+			this,
+			&APickup::BindOverlapTimerFinished,
+			BindOverlapTime
+		);
 	}
 	
 }
@@ -82,4 +93,32 @@ void APickup::Destroyed()
 			GetActorLocation(),
 			GetActorRotation()
 		);
+}
+
+void APickup::BindOverlapTimerFinished()
+{
+	// 获取所有正在重叠的角色
+	TArray<AActor*> OverlappingActors;
+	GetOverlappingActors(OverlappingActors);
+
+	// 对每个正在重叠的角色执行操作
+	for (AActor* OverlappingActor : OverlappingActors)
+	{
+		if (AMP_Character* Character = Cast<AMP_Character>(OverlappingActor))
+		{
+			// if colliding with AMP_Character, call OnSphereOverlap()
+			OnSphereOverlap(
+				OverlapSphere,
+				Character,
+				Cast<UPrimitiveComponent>(Character->GetRootComponent()),
+				0,
+				false,
+				FHitResult()
+			);
+		}
+	}
+
+	// processing in server
+	OverlapSphere->OnComponentBeginOverlap.AddDynamic(this, &APickup::OnSphereOverlap);
+
 }
