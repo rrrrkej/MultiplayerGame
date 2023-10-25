@@ -48,8 +48,9 @@ public:
 	UPROPERTY(Replicated)
 	bool bDisableGameplay = false;
 
-	//	Update Health in HUD
+	//	Update  HUD
 	void UpdateHUDHealth();
+	void UpdateHUDShield();
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -119,13 +120,19 @@ private:
 	* Character health
 	*/
 	UPROPERTY(EditAnywhere, Category = "Player Stats")
-	float MaxHealth = 100;
-
-	UPROPERTY(ReplicatedUsing = OnRep_Health, VisibleAnywhere, Category = "Player Stats")
+	float MaxHealth = 100.f;
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_Health,  Category = "Player Stats")
 	float Health = 100.f;
+
+	UPROPERTY(EditAnywhere, Category = "Player Stats")
+	float MaxShield = 100.f;
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_Shield,  Category = "Player Stats")
+	float Shield = 100.f;
 
 	UFUNCTION()
 	void OnRep_Health(float LastHealth);
+	UFUNCTION()
+	void OnRep_Shield(float LastShield);
 
 	AMP_PlayerController* MP_PlayerController;
 

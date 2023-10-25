@@ -97,7 +97,9 @@ void AMP_Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	// Ìõ¼þ·¢ËÍ
 	DOREPLIFETIME_CONDITION(AMP_Character, OverlappingWeapon, COND_OwnerOnly);
 	DOREPLIFETIME(AMP_Character, Health);
-	DOREPLIFETIME(AMP_Character, bDisableGameplay)
+	DOREPLIFETIME(AMP_Character, Shield);
+	DOREPLIFETIME(AMP_Character, bDisableGameplay);
+	
 }
 
 void AMP_Character::PostInitializeComponents()
@@ -308,6 +310,7 @@ void AMP_Character::BeginPlay()
 
 	// Initialzied properties in HUD
 	UpdateHUDHealth();
+	UpdateHUDShield();
 
 	// Bind event in server
 	if (HasAuthority())
@@ -370,12 +373,30 @@ void AMP_Character::OnRep_Health(float LastHealth)
 	}
 }
 
+void AMP_Character::OnRep_Shield(float LastShield)
+{
+	UpdateHUDShield();
+	if (Health < LastShield)
+	{
+		PlayHitReactMontage();
+	}
+}
+
 void AMP_Character::UpdateHUDHealth()
 {
 	MP_PlayerController = MP_PlayerController == nullptr ? Cast<AMP_PlayerController>(Controller) : MP_PlayerController;
 	if (MP_PlayerController)
 	{
 		MP_PlayerController->SetHUDHealth(Health, MaxHealth);
+	}
+}
+
+void AMP_Character::UpdateHUDShield()
+{
+	MP_PlayerController = MP_PlayerController == nullptr ? Cast<AMP_PlayerController>(Controller) : MP_PlayerController;
+	if (MP_PlayerController)
+	{
+		MP_PlayerController->SetHUDShield(Shield, MaxShield);
 	}
 }
 
@@ -430,7 +451,26 @@ void AMP_Character::SimuProxiesTurn()
 void AMP_Character::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
 {
 	if (bElimmed) return;
-	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
+
+	//	Received total damage
+	float TotalDamage = Damage;
+	if (Shield > 0.f)
+	{
+		//	Calculate damage to shield
+		if(Shield >= TotalDamage)
+		{
+			Shield = FMath::Clamp(Shield - TotalDamage, 0.f, MaxShield);
+			TotalDamage = 0.f;
+		}
+		else
+		{
+			TotalDamage = FMath::Clamp(TotalDamage - Shield, 0.f, TotalDamage);
+			Shield = 0.f;
+		}
+	}
+	Health = FMath::Clamp(Health - TotalDamage, 0.f, MaxHealth);
+
+	UpdateHUDShield();
 	UpdateHUDHealth();
 	PlayHitReactMontage();
 
@@ -444,7 +484,6 @@ void AMP_Character::ReceiveDamage(AActor* DamagedActor, float Damage, const UDam
 			MP_GameMode->PlayerEliminated(this, MP_PlayerController, AttackerController);
 		}
 	}
-	
 }
 
 void AMP_Character::TurnInPlace(float DeltaTime)

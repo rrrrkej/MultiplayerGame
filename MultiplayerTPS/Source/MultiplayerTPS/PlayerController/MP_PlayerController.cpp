@@ -115,9 +115,34 @@ void AMP_PlayerController::SetHUDHealth(float Health, float MaxHealth)
 	}
 	else
 	{
-		bInitializeCharacterOverlay = true;
+		bInitializeHealth = true;
 		HUDHealth = Health;
 		HUDMaxHealth = MaxHealth;
+	}
+}
+
+void AMP_PlayerController::SetHUDShield(float Shield, float MaxShidle)
+{
+	MP_HUD = MP_HUD == nullptr ? Cast<AMP_HUD>(GetHUD()) : MP_HUD;
+	bool bHUDValid = MP_HUD &&
+		MP_HUD->CharacterOverlay &&
+		MP_HUD->CharacterOverlay->ShieldBar &&
+		MP_HUD->CharacterOverlay->ShieldText;
+
+	if (bHUDValid)
+	{
+		DebugHeader::Print("SetHUDShield()");
+		const float ShieldPercent = Shield / MaxShidle;
+		MP_HUD->CharacterOverlay->ShieldBar->SetPercent(ShieldPercent);
+
+		FString ShieldText = FString::Printf(TEXT("%d/%d"), FMath::CeilToInt(Shield), FMath::CeilToInt(MaxShidle));
+		MP_HUD->CharacterOverlay->ShieldText->SetText(FText::FromString(ShieldText));
+	}
+	else
+	{
+		bInitializeShield = true;
+		HUDShield = Shield;
+		HUDMaxShield = MaxShidle;
 	}
 }
 
@@ -135,7 +160,7 @@ void AMP_PlayerController::SetHUDScore(float Score)
 	}
 	else
 	{
-		bInitializeCharacterOverlay = true;
+		bInitializeScore = true;
 		HUDScore = Score;
 	}
 }
@@ -154,7 +179,7 @@ void AMP_PlayerController::SetHUDDefeats(int32 Defeats)
 	}
 	else
 	{
-		bInitializeCharacterOverlay = true;
+		bInitializeDefeats = true;
 		HUDDefeats = Defeats;
 	}
 }
@@ -305,12 +330,14 @@ void AMP_PlayerController::PollInit()
 			CharacterOverlay = MP_HUD->CharacterOverlay;
 			if (CharacterOverlay)
 			{
-				SetHUDHealth(HUDHealth, HUDMaxHealth);
-				SetHUDScore(HUDScore);
-				SetHUDDefeats(HUDDefeats);
-
+				DebugHeader::Print("PollInit()");
+				if (bInitializeHealth)	SetHUDHealth(HUDHealth, HUDMaxHealth);
+				if (bInitializeShield)	SetHUDShield(HUDShield, HUDMaxShield);
+				if (bInitializeScore)	SetHUDScore(HUDScore);
+				if (bInitializeDefeats)	SetHUDDefeats(HUDDefeats);
+				
 				AMP_Character* MP_Character = Cast<AMP_Character>(GetPawn());
-				if (MP_Character && MP_Character->GetCombatComponent())
+				if (MP_Character && MP_Character->GetCombatComponent() && bInitializeGrenades)
 				{
 					SetHUDGrenades(MP_Character->GetCombatComponent()->GetGrenades());
 				}
