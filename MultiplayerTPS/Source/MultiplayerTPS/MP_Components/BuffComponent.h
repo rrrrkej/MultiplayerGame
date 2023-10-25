@@ -18,6 +18,7 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	void Heal(float HealAmount, float HealingTime);
+	void ReplenishShield(float ShieldAmount, float ShieldReplenishTime);
 	void BuffSpeed(float BuffBaseSpeed, float BuffCrouchSpeed, float BuffTime);
 	void BuffJump(float BuffJumpVelocity, float BuffTime);
 
@@ -27,6 +28,7 @@ protected:
 	virtual void BeginPlay() override;
 
 	void HealRampUp(float DeltaTime);
+	void ShieldRampUp(float DeltaTime);
 
 private:
 	UPROPERTY()
@@ -40,6 +42,13 @@ private:
 	float AmountToHeal = 0.f;	// record amount of healing needed
 
 	/*
+	* Shield
+	*/
+	bool bReplenishShield = false;
+	float ShieldReplenishRate = 0.f;	//	Replenish shield per second
+	float AmountToShieldReplenish = 0.f;			//	total of shield replenish 
+
+	/*	
 	* Speed Buff
 	*/
 	FTimerHandle SpeedBuffTimer;

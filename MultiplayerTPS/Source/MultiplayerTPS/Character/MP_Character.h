@@ -303,6 +303,9 @@ public:
 	FORCEINLINE float GetHealth() const{ return Health; } // return Health
 	FORCEINLINE void SetHealth(float Amount) { Health = Amount; }	// Set Health
 	FORCEINLINE float GetMaxHealth() const{ return MaxHealth; } // return MaxHealth
+	FORCEINLINE float GetShield() const { return Shield; }	//return Shield
+	FORCEINLINE void SetShield(float Amount) { Shield = Amount; }	// Set Shield
+	FORCEINLINE float GetMaxShield() { return MaxShield; }	// return MaxShield
 	ECombatState GetCombatState() const;
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE UCombatComponent* GetCombatComponent() const { return CombatComponent; } // return CombatComponent

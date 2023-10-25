@@ -131,7 +131,6 @@ void AMP_PlayerController::SetHUDShield(float Shield, float MaxShidle)
 
 	if (bHUDValid)
 	{
-		DebugHeader::Print("SetHUDShield()");
 		const float ShieldPercent = Shield / MaxShidle;
 		MP_HUD->CharacterOverlay->ShieldBar->SetPercent(ShieldPercent);
 
@@ -330,7 +329,6 @@ void AMP_PlayerController::PollInit()
 			CharacterOverlay = MP_HUD->CharacterOverlay;
 			if (CharacterOverlay)
 			{
-				DebugHeader::Print("PollInit()");
 				if (bInitializeHealth)	SetHUDHealth(HUDHealth, HUDMaxHealth);
 				if (bInitializeShield)	SetHUDShield(HUDShield, HUDMaxShield);
 				if (bInitializeScore)	SetHUDScore(HUDScore);

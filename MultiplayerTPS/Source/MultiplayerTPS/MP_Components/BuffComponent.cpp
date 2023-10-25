@@ -24,6 +24,7 @@ void UBuffComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	HealRampUp(DeltaTime);
+	ShieldRampUp(DeltaTime);
 }
 
 void UBuffComponent::Heal(float HealAmount, float HealingTime)
@@ -131,4 +132,27 @@ void UBuffComponent::MulticastJumpBuff_Implementation(float JumppVelocity)
 	if (Character == nullptr || !Character->GetCharacterMovement()) return;
 
 	Character->GetCharacterMovement()->JumpZVelocity = JumppVelocity;
+}
+
+void UBuffComponent::ReplenishShield(float ShieldAmount, float ShieldReplenishTime)
+{
+	bReplenishShield = true;
+	ShieldReplenishRate = ShieldAmount / ShieldReplenishTime;
+	AmountToShieldReplenish += ShieldAmount;
+}
+
+void UBuffComponent::ShieldRampUp(float DeltaTime)
+{
+	if (!bReplenishShield || Character == nullptr || Character->IsElimmed()) return;
+
+	const float ReplenishThisFrame = ShieldReplenishRate * DeltaTime;
+	Character->SetShield(FMath::Clamp(Character->GetShield() + ReplenishThisFrame, 0.f, Character->GetMaxShield()));
+	Character->UpdateHUDShield();
+	AmountToShieldReplenish -= ReplenishThisFrame;
+
+	if (AmountToShieldReplenish <= 0.f || Character->GetShield() >= Character->GetMaxShield())
+	{
+		bReplenishShield = false;
+		AmountToShieldReplenish = 0.f;
+	}
 }
