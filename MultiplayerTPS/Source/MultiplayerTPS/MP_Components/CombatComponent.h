@@ -27,6 +27,7 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void EquipWeapon(AWeapon* WeaponToEquip);
+	void SwapWeapons();
 	void Reload();
 	UFUNCTION(BlueprintCallable)
 
@@ -62,6 +63,9 @@ protected:
 
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
+
+	UFUNCTION()
+	void OnRep_SecondaryWeapon();
 public:
 	void FireButtonpressed(bool bPressed);
 
@@ -105,18 +109,25 @@ protected:
 	void AttachActorToRightHand(AActor* ActorToAttach);
 	// Attach Actor to Character's RightHand socket
 	void AttachActorToLeftHand(AActor* ActorToAttach);
+	// Attach Actor to Character's Backpack socket
+	void AttachActorToBackpack(AActor* ActorToAttach);
 
 	// Set CarriedAmmo and update HUD
 	void UpdateCarriedAmmo();
 
 	// Play EquipWeapon sound
-	void PlayEquipWeaponSound();
+	void PlayEquipWeaponSound(AWeapon* WeaponToEquip);
 
 	// Reload Weapon if empty
 	void ReloadEmptyWeapon();
 
 	// Alther AttachedGrenade visibility
 	void ShowAttachedGrenade(bool bShowGrenade);
+
+	// Equip primary weapon
+	void EquipPrimaryWeapon(AWeapon* WeaponToEquip);
+	// Equip secondary weapon
+	void EquipSecondaryWeapon(AWeapon* WeaponToEquip);
 
 private:
 	UPROPERTY()
@@ -126,9 +137,12 @@ private:
 	UPROPERTY()
 	AMP_HUD* HUD;
 
+	// EquppedWeapon is equals to PrimaryWeapon in design, the SecondaryWeapon is weapon without equipped
 	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
 	AWeapon* EquippedWeapon;
-	
+	UPROPERTY(ReplicatedUsing = OnRep_SecondaryWeapon)
+	AWeapon* SecondaryWeapon;
+
 	UPROPERTY(Replicated)
 	bool bAiming;
 
@@ -257,4 +271,5 @@ private:
 	public:
 		FORCEINLINE int32 GetGrenades() const { return Grenades; }	// return number of grenade
 		FORCEINLINE TMap<EWeaponType, TArray<int32>> GetCarriedAmmoMap() const { return CarriedAmmoMap; }	// return CarriedAmmoMap
+		bool ShouldSwapWeapons();
 };

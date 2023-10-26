@@ -30,7 +30,7 @@ void AProjectileRocket::BeginPlay()
 		CollisionBox->OnComponentHit.AddDynamic(this, &AProjectileRocket::OnHit);
 	}
 
-	// 生成火箭弹的弹道
+	// 生成火箭弹的弹道粒子
 	SpawnTrailSystem();
 
 	if (ProjectileLoop && LoopingSoundAttenuation)

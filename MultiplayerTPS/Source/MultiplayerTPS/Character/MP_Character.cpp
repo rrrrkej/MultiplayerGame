@@ -682,7 +682,15 @@ void AMP_Character::ServerEquipButtonPressed_Implementation()
 {
 	if (CombatComponent)
 	{
-		CombatComponent->EquipWeapon(OverlappingWeapon);
+		if(OverlappingWeapon)
+		{ 
+			CombatComponent->EquipWeapon(OverlappingWeapon);
+		}
+		else if (CombatComponent->ShouldSwapWeapons())
+		{
+			CombatComponent->SwapWeapons();
+		}
+		
 	}
 }
 
@@ -832,20 +840,12 @@ void AMP_Character::JumpPressed(const FInputActionValue& Value)
 	
 }
 
-//Called by server
 void AMP_Character::Interaction(const FInputActionValue& Value)
 {
 	if (bDisableGameplay) return;
 	if (CombatComponent)
 	{
-		if (HasAuthority())
-		{
-			CombatComponent->EquipWeapon(OverlappingWeapon);
-		}
-		else
-		{
-			ServerEquipButtonPressed();
-		}
+		ServerEquipButtonPressed();
 	}
 }
 
