@@ -2,16 +2,19 @@
 
 
 #include "MP_PlayerController.h"
-#include "MultiplayerTPS/UserWidget/MP_HUD.h"
-#include "MultiplayerTPS/UserWidget/CharacterOverlay.h"
+
+#include "Net/UnrealNetwork.h"
+#include "Kismet/GameplayStatics.h"
+#include "Components/Image.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
+
 #include "MultiplayerTPS/Character/MP_Character.h"
-#include "Net/UnrealNetwork.h"
+#include "MultiplayerTPS/UserWidget/MP_HUD.h"
+#include "MultiplayerTPS/UserWidget/CharacterOverlay.h"
 #include "MultiplayerTPS/GameMode/MP_GameMode.h"
 #include "MultiplayerTPS/DebugHeader.h"
 #include "MultiplayerTPS/UserWidget/Announcement.h"
-#include "Kismet/GameplayStatics.h"
 #include "MultiplayerTPS/MP_Components/CombatComponent.h"
 #include "MultiplayerTPS/GameState/MP_GameState.h"
 #include "MultiplayerTPS/PlayerState/MP_PlayerState.h"
@@ -24,8 +27,6 @@ void AMP_PlayerController::BeginPlay()
 	MP_HUD = Cast<AMP_HUD>(GetHUD());
 
 	ServerCheckMatchState();
-
-	
 }
 
 //	call at BeginPlay()
@@ -41,7 +42,6 @@ void AMP_PlayerController::ServerCheckMatchState_Implementation()
 		LevelStartingTime = GameMode->LevelStartingTime;
 		MatchState = GameMode->GetMatchState();
 		ClientJoinMidgame(MatchState, WarmupTime, MatchTime, CooldownTime, LevelStartingTime);
-
 	}
 }
 
@@ -74,6 +74,9 @@ void AMP_PlayerController::Tick(float DeltaTime)
 	CheckTimeSync(DeltaTime);
 
 	PollInit();
+
+	CheckPing(DeltaTime);
+
 }
 
 void AMP_PlayerController::ReceivedPlayer()
@@ -330,15 +333,38 @@ void AMP_PlayerController::SetHUDTime()
 	CountdownInt = SecondsLeft;
 }
 
-
-#pragma endregion
-void AMP_PlayerController::CheckTimeSync(float DeltaTime)
+void AMP_PlayerController::HighPingWarning()
 {
-	TimeSyncRunningTime += DeltaTime;
-	if (IsLocalController() && TimeSyncRunningTime > TimeSyncFrequency)
+	MP_HUD = MP_HUD == nullptr ? Cast<AMP_HUD>(GetHUD()) : MP_HUD;
+	bool bHUDValid = MP_HUD &&
+		MP_HUD->CharacterOverlay->Wifi_img &&
+		MP_HUD->CharacterOverlay->HighPingAnimation;
+
+	if (bHUDValid)
 	{
-		ServerRequestServerTime(GetWorld()->GetTimeSeconds());
-		TimeSyncRunningTime = 0.f;
+		MP_HUD->CharacterOverlay->Wifi_img->SetOpacity(1.f);
+		MP_HUD->CharacterOverlay->PlayAnimation(
+			MP_HUD->CharacterOverlay->HighPingAnimation,
+			0.f,
+			3
+		);
+	}
+}
+
+void AMP_PlayerController::StopHighPingWarning()
+{
+	MP_HUD = MP_HUD == nullptr ? Cast<AMP_HUD>(GetHUD()) : MP_HUD;
+	bool bHUDValid = MP_HUD &&
+		MP_HUD->CharacterOverlay->Wifi_img &&
+		MP_HUD->CharacterOverlay->HighPingAnimation;
+
+	if (bHUDValid)
+	{
+		MP_HUD->CharacterOverlay->Wifi_img->SetOpacity(0.f);
+		if (MP_HUD->CharacterOverlay->IsAnimationPlaying(MP_HUD->CharacterOverlay->HighPingAnimation))
+		{
+			MP_HUD->CharacterOverlay->StopAnimation(MP_HUD->CharacterOverlay->HighPingAnimation);
+		}
 	}
 }
 
@@ -353,7 +379,7 @@ void AMP_PlayerController::PollInit()
 			{
 				if (bInitializeHealth)
 				{
-					bInitializeHealth = false; 
+					bInitializeHealth = false;
 					SetHUDHealth(HUDHealth, HUDMaxHealth);
 				}
 				if (bInitializeShield)
@@ -371,12 +397,12 @@ void AMP_PlayerController::PollInit()
 					bInitializeDefeats = false;
 					SetHUDDefeats(HUDDefeats);
 				}
-				if (bInitializeCarriedAmmo) 
+				if (bInitializeCarriedAmmo)
 				{
 					bInitializeCarriedAmmo = false;
 					SetHUDCarriedAmmo(HUDCarriedAmmo);
 				}
-				if (bInitializeWeaponAmmo) 
+				if (bInitializeWeaponAmmo)
 				{
 					bInitializeWeaponAmmo = false;
 					SetHUDWeaponAmmo(HUDWeaponAmmo);
@@ -388,6 +414,17 @@ void AMP_PlayerController::PollInit()
 				}
 			}
 		}
+	}
+}
+
+#pragma endregion
+void AMP_PlayerController::CheckTimeSync(float DeltaTime)
+{
+	TimeSyncRunningTime += DeltaTime;
+	if (IsLocalController() && TimeSyncRunningTime > TimeSyncFrequency)
+	{
+		ServerRequestServerTime(GetWorld()->GetTimeSeconds());
+		TimeSyncRunningTime = 0.f;
 	}
 }
 
@@ -408,6 +445,35 @@ float AMP_PlayerController::GetServerTime()
 {
 	if (HasAuthority()) return GetWorld()->GetTimeSeconds();
 	else    return GetWorld()->GetTimeSeconds() + ClientServerDelta;
+}
+
+void AMP_PlayerController::CheckPing(float DeltaTime)
+{
+	HighPingRunningTime += DeltaTime;
+	if (HighPingRunningTime > CheckPingFrequency)
+	{
+		PlayerState = PlayerState == nullptr ? GetPlayerState<APlayerState>() : PlayerState;
+		if (PlayerState)
+		{
+			if (PlayerState->GetPingInMilliseconds() > HighPingThreshold)
+			{
+				HighPingWarning();
+				PingAnimationRunningTime = 0.f;
+			}
+		}
+		HighPingRunningTime = 0.f;
+	}
+	if (MP_HUD &&
+		MP_HUD->CharacterOverlay &&
+		MP_HUD->CharacterOverlay->HighPingAnimation &&
+		MP_HUD->CharacterOverlay->IsAnimationPlaying(MP_HUD->CharacterOverlay->HighPingAnimation))
+	{
+		PingAnimationRunningTime += DeltaTime;
+		if (PingAnimationRunningTime > HighPingDuration)
+		{
+			StopHighPingWarning();
+		}
+	}
 }
 
 void AMP_PlayerController::OnMatchStateSet(FName State)

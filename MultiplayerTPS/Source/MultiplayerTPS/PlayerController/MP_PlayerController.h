@@ -75,6 +75,13 @@ protected:
 	UFUNCTION(Client, Reliable)
 	void ClientJoinMidgame(FName StateOfMatch, float Warmup, float Match, float Cooldown, float StartingTime);
 
+	// Play WidgetAnimation as high ping warning
+	void HighPingWarning();
+	void StopHighPingWarning();
+
+	// Check Ping in tick()
+	void CheckPing(float DeltaTime);
+
 private:
 	UPROPERTY()
 	AMP_HUD* MP_HUD;
@@ -123,5 +130,19 @@ private:
 	float HUDWeaponAmmo;
 	bool bInitializeWeaponAmmo = false;
 	
+	/*
+	* HighPing settings
+	*/
+	float HighPingRunningTime = 0.f;
 
+	UPROPERTY(EditAnywhere)
+	float HighPingDuration = 5.f;
+	
+	float PingAnimationRunningTime = 0.f;
+
+	UPROPERTY(EditAnywhere)
+	float CheckPingFrequency = 20.f;
+
+	UPROPERTY(EditAnywhere)
+	float HighPingThreshold = 50.f;
 };
