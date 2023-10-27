@@ -345,17 +345,30 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 {
 	if (Character == nullptr || WeaponToEquip == nullptr) return;
 	if (CombatState != ECombatState::ECS_Unoccupied) return;
-	if (EquippedWeapon != nullptr && SecondaryWeapon == nullptr)
+
+	if (EquippedWeapon == nullptr)
+	{
+		EquipPrimaryWeapon(WeaponToEquip);
+		PrimaryWeaponPtr = &WeaponToEquip;
+	}
+	else if (EquippedWeapon != nullptr && SecondaryWeapon == nullptr)
 	{
 		EquipSecondaryWeapon(WeaponToEquip);
 		SecondaryWeaponPtr = &WeaponToEquip;
 	}
-	else
+	else if (EquippedWeapon != nullptr && SecondaryWeapon != nullptr)
 	{
-		 EquipPrimaryWeapon(WeaponToEquip);
-		 PrimaryWeaponPtr = &WeaponToEquip;
+		if (EquippedWeapon == *PrimaryWeaponPtr)
+		{
+			EquipPrimaryWeapon(WeaponToEquip);
+			PrimaryWeaponPtr = &WeaponToEquip;
+		}
+		else if (EquippedWeapon == *SecondaryWeaponPtr)
+		{
+			EquipPrimaryWeapon(WeaponToEquip);
+			SecondaryWeaponPtr = &WeaponToEquip;
+		}
 	}
-	
 
 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 	Character->bUseControllerRotationYaw = true;
@@ -405,6 +418,13 @@ void UCombatComponent::EquipSecondaryWeapon(AWeapon* WeaponToEquip)
 	AttachActorToBackpack(WeaponToEquip);
 	PlayEquipWeaponSound(WeaponToEquip);
 	WeaponToEquip->SetOwner(Character);
+}
+
+void UCombatComponent::EquipSpecifiedWeapon(AWeapon** WeaponToEquip)
+{
+	if (WeaponToEquip == nullptr) return;
+	if (*WeaponToEquip == EquippedWeapon) return;
+	else SwapWeapons();
 }
 
 void UCombatComponent::OnRep_EquippedWeapon()

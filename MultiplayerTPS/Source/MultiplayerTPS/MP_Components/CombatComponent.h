@@ -128,6 +128,8 @@ protected:
 	void EquipPrimaryWeapon(AWeapon* WeaponToEquip);
 	// Equip secondary weapon
 	void EquipSecondaryWeapon(AWeapon* WeaponToEquip);
+	// Equip specified weapon
+	void EquipSpecifiedWeapon(AWeapon** WeaponToEquip);
 
 private:
 	UPROPERTY()

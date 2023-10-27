@@ -972,7 +972,7 @@ void AMP_Character::EquipPrimaryWeapon(const FInputActionValue& Value)
 {
 	if (CombatComponent && CombatComponent->PrimaryWeaponPtr)
 	{
-		CombatComponent->EquipWeapon(*CombatComponent->PrimaryWeaponPtr);
+		CombatComponent->EquipSpecifiedWeapon(CombatComponent->PrimaryWeaponPtr);
 	}
 }
 
@@ -980,7 +980,7 @@ void AMP_Character::EquipSecondaryWeapon(const FInputActionValue& Value)
 {
 	if (CombatComponent && CombatComponent->SecondaryWeaponPtr)
 	{
-		CombatComponent->EquipWeapon(*CombatComponent->SecondaryWeaponPtr);
+		CombatComponent->EquipSpecifiedWeapon(CombatComponent->SecondaryWeaponPtr);
 	}
 }
 
