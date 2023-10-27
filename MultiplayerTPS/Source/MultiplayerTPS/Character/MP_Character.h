@@ -55,6 +55,9 @@ public:
 
 	//	Spawn default weapon at beginning
 	void SpawnDefaultWeapon();
+
+	// Handle weapon state when character is elimmed
+	void HandleWeaponWhenElimed(AWeapon* Weapon);
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -72,6 +75,8 @@ protected:
 	// Founction for Rotate In Place feature
 	void RotateInPlace(float DeltaTime);
 
+	// Set health progress bar in OverheadWidget
+	void SetOverheadHealth();
 private:
 
 	UPROPERTY(VisibleAnywhere, Category = Camera)
@@ -81,7 +86,7 @@ private:
 	UCameraComponent* FollowCamera;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	UWidgetComponent* OverheadWidget;
+	UWidgetComponent* OverheadWidgetComponent;
 
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_OverlappingWeapon)
 	AWeapon* OverlappingWeapon;
@@ -264,6 +269,12 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* ThrowGrenadeAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* PrimaryWeapon;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* SecondaryWeapon;
 protected:
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
@@ -293,6 +304,11 @@ protected:
 
 	/* Called for throw grenade*/
 	void ThrowGrenade(const FInputActionValue& Value);
+
+	/* swap to specified weapon*/
+	void EquipPrimaryWeapon(const FInputActionValue& Value);
+	void EquipSecondaryWeapon(const FInputActionValue& Value);
+
 #pragma endregion
 
 public:	

@@ -7,6 +7,7 @@
 #include "OverheadWidget.generated.h"
 
 class UTextBlock;
+class UProgressBar;
 /**
  * 
  */
@@ -16,8 +17,13 @@ class MULTIPLAYERTPS_API UOverheadWidget : public UUserWidget
 	GENERATED_BODY()
 	
 public:
+	friend class AMP_Character;
+
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* DisplayText;
+
+	UPROPERTY(meta = (BindWidget))
+	UProgressBar* HealthBar;
 
 	//Set the text of DisplayText
 	void SetDisplayText(FString TextToDisplay);

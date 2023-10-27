@@ -14,8 +14,9 @@
 #include "Timermanager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
-
 #include "particles/ParticleSystemComponent.h"
+#include "Components/ProgressBar.h"
+
 #include "MultiplayerTPS/PlayerState/MP_PlayerState.h"
 #include "MultiplayerTPS/Weapon/WeaponTypes.h"
 #include "MultiplayerTPS/Weapon/Weapon.h"
@@ -25,6 +26,7 @@
 #include "MultiplayerTPS/MultiplayerTPS.h"
 #include "MultiplayerTPS/PlayerController/MP_PlayerController.h"
 #include "MultiplayerTPS/GameMode/MP_GameMode.h"
+#include "MultiplayerTPS/UserWidget/OverheadWidget.h"
 #include "../DebugHeader.h"
 // Sets default values
 AMP_Character::AMP_Character()
@@ -51,8 +53,9 @@ AMP_Character::AMP_Character()
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 
 	// initialize overhead WidgetComponent
-	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
-	OverheadWidget->SetupAttachment(RootComponent);
+	OverheadWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
+	OverheadWidgetComponent->SetupAttachment(RootComponent);
+	OverheadWidgetComponent->SetIsReplicated(true);
 
 	// initialize CombatComponent
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
@@ -117,6 +120,7 @@ void AMP_Character::PostInitializeComponents()
 			GetCharacterMovement()->MaxWalkSpeedCrouched);
 		BuffComponent->SetInitialJumpVelocity(GetCharacterMovement()->JumpZVelocity);
 	}
+	
 }
 
 void AMP_Character::OnRep_ReplicatedMovement()
@@ -128,17 +132,12 @@ void AMP_Character::OnRep_ReplicatedMovement()
 
 void AMP_Character::Elim()
 {
-	if (CombatComponent && CombatComponent->EquippedWeapon)
+	if (CombatComponent)
 	{
-		//	Destroy default weapon when elimmed
-		if (CombatComponent->EquippedWeapon->bDestroyWeapon)
-		{
-			CombatComponent->EquippedWeapon->Destroy();
-		}
-		else
-		{
-			CombatComponent->EquippedWeapon->Dropped();
-		}
+		if (CombatComponent->EquippedWeapon)
+			HandleWeaponWhenElimed(CombatComponent->EquippedWeapon);
+		if (CombatComponent->SecondaryWeapon)
+			HandleWeaponWhenElimed(CombatComponent->SecondaryWeapon);
 	}
 
 	MulticastElim();
@@ -148,6 +147,19 @@ void AMP_Character::Elim()
 		&AMP_Character::ElimTimerFinished, 
 		ElimDelay
 		);
+}
+
+void AMP_Character::HandleWeaponWhenElimed(AWeapon* Weapon)
+{
+	if (Weapon == nullptr) return;
+	if (Weapon && Weapon->bDestroyWeapon)
+	{
+		Weapon->Destroy();
+	}
+	else
+	{
+		Weapon->Dropped();
+	}
 }
 
 void AMP_Character::Destroyed()
@@ -271,6 +283,7 @@ void AMP_Character::Tick(float DeltaTime)
 	RotateInPlace(DeltaTime);
 	HideCamera();
 	PollInit();
+
 }
 
 void AMP_Character::PollInit()
@@ -311,31 +324,53 @@ void AMP_Character::RotateInPlace(float DeltaTime)
 	}
 }
 
+void AMP_Character::SetOverheadHealth()
+{
+	UOverheadWidget* OverheadWidget = Cast<UOverheadWidget>(OverheadWidgetComponent->GetUserWidgetObject());
+	if (OverheadWidget)
+	{
+		const float HealthPercent = Health / MaxHealth;
+		OverheadWidget->HealthBar->SetPercent(HealthPercent);
+	}
+}
+
 // Called when the game starts or when spawned
 void AMP_Character::BeginPlay()
 {
-	
 	Super::BeginPlay();
-	
+
 	//	Spawn default weapon at beginning
 	SpawnDefaultWeapon();
-	UpdateHUDAmmo();
+	
 
 	// Initialzied properties in HUD
 	UpdateHUDHealth();
 	UpdateHUDShield();
-
+	SetOverheadHealth();
+	UpdateHUDAmmo();
+	if (CombatComponent)
+	{
+		CombatComponent->UpdateHUDGrenades();
+	}
 	// Bind event in server
 	if (HasAuthority())
 	{
 		OnTakeAnyDamage.AddDynamic(this, &AMP_Character::ReceiveDamage);
 	}
 
+	if (IsLocallyControlled())
+	{
+		if (OverheadWidgetComponent)
+		{
+			OverheadWidgetComponent->SetVisibility(false);
+		}
+	}
 	//Gamestart default settings
 	if (AttachedGrenade)
 	{
 		AttachedGrenade->SetVisibility(false);
 	}
+	
 }
 
 void AMP_Character::AimOffset(float DeltaTime)
@@ -380,6 +415,7 @@ float AMP_Character::CalculateSpeed()
 void AMP_Character::OnRep_Health(float LastHealth)
 {
 	UpdateHUDHealth();
+	SetOverheadHealth();
 	if (Health < LastHealth)
 	{
 		PlayHitReactMontage();
@@ -397,6 +433,7 @@ void AMP_Character::OnRep_Shield(float LastShield)
 
 void AMP_Character::UpdateHUDHealth()
 {
+	
 	MP_PlayerController = MP_PlayerController == nullptr ? Cast<AMP_PlayerController>(Controller) : MP_PlayerController;
 	if (MP_PlayerController)
 	{
@@ -495,6 +532,7 @@ void AMP_Character::ReceiveDamage(AActor* DamagedActor, float Damage, const UDam
 
 	UpdateHUDShield();
 	UpdateHUDHealth();
+	SetOverheadHealth();
 	PlayHitReactMontage();
 
 	if (Health == 0.f)
@@ -757,34 +795,38 @@ void AMP_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent)) {
 
-		//Jumping
+		// Jumping
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &AMP_Character::JumpPressed);
 
-		//Moving
+		// Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AMP_Character::Move);
 
-		//Looking
+		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AMP_Character::Look);
 
-		//Interaction
+		// Interaction
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &AMP_Character::Interaction);
 
-		//Crouch
+		// Crouch
 		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Triggered, this, &AMP_Character::CrouchPressed);
 
-		//Aim
+		// Aim
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Triggered, this, &AMP_Character::Aim);
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &AMP_Character::EndAim);
 
-		//Fire
+		// Fire
 		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Triggered, this, &AMP_Character::Fire);
 		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, this, &AMP_Character::EndFire);
 
-		//Reload
+		// Reload
 		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &AMP_Character::Reload);
 
-		//Throw grenade
+		// Throw grenade
 		EnhancedInputComponent->BindAction(ThrowGrenadeAction, ETriggerEvent::Triggered, this, &AMP_Character::ThrowGrenade);
+
+		// swap to specified weapon
+		EnhancedInputComponent->BindAction(PrimaryWeapon, ETriggerEvent::Triggered, this, &AMP_Character::EquipPrimaryWeapon);
+		EnhancedInputComponent->BindAction(SecondaryWeapon, ETriggerEvent::Triggered, this, &AMP_Character::EquipSecondaryWeapon);
 	}
 }
 
@@ -923,6 +965,22 @@ void AMP_Character::ThrowGrenade(const FInputActionValue& Value)
 	if (CombatComponent && CombatComponent->EquippedWeapon)
 	{
 		CombatComponent->ThrowGrenade();
+	}
+}
+
+void AMP_Character::EquipPrimaryWeapon(const FInputActionValue& Value)
+{
+	if (CombatComponent && CombatComponent->PrimaryWeaponPtr)
+	{
+		CombatComponent->EquipWeapon(*CombatComponent->PrimaryWeaponPtr);
+	}
+}
+
+void AMP_Character::EquipSecondaryWeapon(const FInputActionValue& Value)
+{
+	if (CombatComponent && CombatComponent->SecondaryWeaponPtr)
+	{
+		CombatComponent->EquipWeapon(*CombatComponent->SecondaryWeaponPtr);
 	}
 }
 

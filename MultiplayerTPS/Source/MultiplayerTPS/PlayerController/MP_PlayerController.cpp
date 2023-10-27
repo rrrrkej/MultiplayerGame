@@ -15,6 +15,7 @@
 #include "MultiplayerTPS/MP_Components/CombatComponent.h"
 #include "MultiplayerTPS/GameState/MP_GameState.h"
 #include "MultiplayerTPS/PlayerState/MP_PlayerState.h"
+#include "MultiplayerTPS/Weapon/Weapon.h"
 
 void AMP_PlayerController::BeginPlay()
 {
@@ -84,6 +85,7 @@ void AMP_PlayerController::ReceivedPlayer()
 	}
 }
 
+// Called on server
 void AMP_PlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
@@ -91,8 +93,15 @@ void AMP_PlayerController::OnPossess(APawn* InPawn)
 	AMP_Character* MP_Character = Cast<AMP_Character>(InPawn);
 	if (MP_Character)
 	{
+		// Character重生的时候，Client本地Character的Controller已经设置好了，但是Server端没设置好
 		SetHUDHealth(MP_Character->GetHealth(), MP_Character->GetMaxHealth());
-		SetHUDGrenades(MP_Character->GetCombatComponent()->GetGrenades()); // 用来复活更新HUD
+		SetHUDShield(MP_Character->GetShield(), MP_Character->GetMaxShield());
+		SetHUDGrenades(MP_Character->GetCombatComponent()->GetGrenades()); 
+		if (MP_Character->GetCombatComponent() && MP_Character->GetCombatComponent()->GetEquippedWeapon())
+		{
+			SetHUDWeaponAmmo(MP_Character->GetCombatComponent()->GetEquippedWeapon()->GetAmmo());
+			SetHUDCarriedAmmo(MP_Character->GetCombatComponent()->GetCarriedAmmo());
+		}
 	}
 }
 
@@ -221,6 +230,25 @@ void AMP_PlayerController::SetHUDCarriedAmmo(int32 Ammo)
 	}
 }
 
+void AMP_PlayerController::SetHUDGrenades(int32 GrenadesNum)
+{
+	MP_HUD = MP_HUD == nullptr ? Cast<AMP_HUD>(GetHUD()) : MP_HUD;
+	bool bHUDValid = MP_HUD &&
+		MP_HUD->CharacterOverlay &&
+		MP_HUD->CharacterOverlay->GrenadesText;
+
+	if (bHUDValid)
+	{
+		FString GrenadesText = FString::Printf(TEXT("%d"), GrenadesNum);
+		MP_HUD->CharacterOverlay->GrenadesText->SetText(FText::FromString(GrenadesText));
+	}
+	else
+	{
+		bInitializeGrenades = true;
+		HUDGrenades = GrenadesNum;
+	}
+}
+
 void AMP_PlayerController::SetHUDMatchCountdown(float CountdownTime)
 {
 	MP_HUD = MP_HUD == nullptr ? Cast<AMP_HUD>(GetHUD()) : MP_HUD;
@@ -302,23 +330,7 @@ void AMP_PlayerController::SetHUDTime()
 	CountdownInt = SecondsLeft;
 }
 
-void AMP_PlayerController::SetHUDGrenades(int32 GrenadesNum)
-{
-	MP_HUD = MP_HUD == nullptr ? Cast<AMP_HUD>(GetHUD()) : MP_HUD;
-	bool bHUDValid = MP_HUD &&
-		MP_HUD->CharacterOverlay &&
-		MP_HUD->CharacterOverlay->GrenadesText;
 
-	if (bHUDValid)
-	{
-		FString GrenadesText = FString::Printf(TEXT("%d"), GrenadesNum);
-		MP_HUD->CharacterOverlay->GrenadesText->SetText(FText::FromString(GrenadesText));
-	}
-	else
-	{
-		HUDGrenades = GrenadesNum;
-	}
-}
 #pragma endregion
 void AMP_PlayerController::CheckTimeSync(float DeltaTime)
 {
@@ -369,10 +381,10 @@ void AMP_PlayerController::PollInit()
 					bInitializeWeaponAmmo = false;
 					SetHUDWeaponAmmo(HUDWeaponAmmo);
 				}
-				AMP_Character* MP_Character = Cast<AMP_Character>(GetPawn());
-				if (MP_Character && MP_Character->GetCombatComponent() && bInitializeGrenades)
+				if (bInitializeGrenades)
 				{
-					SetHUDGrenades(MP_Character->GetCombatComponent()->GetGrenades());
+					bInitializeGrenades = false;
+					SetHUDGrenades(HUDGrenades);
 				}
 			}
 		}

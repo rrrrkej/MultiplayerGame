@@ -142,6 +142,9 @@ private:
 	AWeapon* EquippedWeapon;
 	UPROPERTY(ReplicatedUsing = OnRep_SecondaryWeapon)
 	AWeapon* SecondaryWeapon;
+	
+	AWeapon** PrimaryWeaponPtr;	// Point to PrimaryWeapon(key Num1)
+	AWeapon** SecondaryWeaponPtr;	// Point to SecondaryWeapon(key Num2)
 
 	UPROPERTY(Replicated)
 	bool bAiming;
@@ -272,4 +275,6 @@ private:
 		FORCEINLINE int32 GetGrenades() const { return Grenades; }	// return number of grenade
 		FORCEINLINE TMap<EWeaponType, TArray<int32>> GetCarriedAmmoMap() const { return CarriedAmmoMap; }	// return CarriedAmmoMap
 		bool ShouldSwapWeapons();
+		FORCEINLINE AWeapon* GetEquippedWeapon() const { return EquippedWeapon; }	//	return EquippedWeapon
+		FORCEINLINE int32 GetCarriedAmmo() const { return CarriedAmmo; }	//	return CarriedAmmo
 };
