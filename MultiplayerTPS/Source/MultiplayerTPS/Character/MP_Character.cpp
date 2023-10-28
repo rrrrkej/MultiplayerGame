@@ -342,7 +342,6 @@ void AMP_Character::BeginPlay()
 	//	Spawn default weapon at beginning
 	SpawnDefaultWeapon();
 	
-
 	// Initialzied properties in HUD
 	UpdateHUDHealth();
 	UpdateHUDShield();
@@ -972,7 +971,8 @@ void AMP_Character::EquipPrimaryWeapon(const FInputActionValue& Value)
 {
 	if (CombatComponent && CombatComponent->PrimaryWeaponPtr)
 	{
-		CombatComponent->EquipSpecifiedWeapon(CombatComponent->PrimaryWeaponPtr);
+		DebugHeader::Print("ServerEquipSpecifiedWeapon_111111111();");
+		CombatComponent->ServerEquipSpecifiedWeapon_1();
 	}
 }
 
@@ -980,7 +980,8 @@ void AMP_Character::EquipSecondaryWeapon(const FInputActionValue& Value)
 {
 	if (CombatComponent && CombatComponent->SecondaryWeaponPtr)
 	{
-		CombatComponent->EquipSpecifiedWeapon(CombatComponent->SecondaryWeaponPtr);
+		DebugHeader::Print("ServerEquipSpecifiedWeapon_22222222222();");
+		CombatComponent->ServerEquipSpecifiedWeapon_2();
 	}
 }
 

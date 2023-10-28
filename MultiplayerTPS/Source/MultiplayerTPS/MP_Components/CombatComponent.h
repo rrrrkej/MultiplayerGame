@@ -72,12 +72,25 @@ public:
 protected:
 	// processing fire in server
 	void Fire();
+	void FireProjectileWeapon();
+	void FireHitScanWeapon();
+	void FireShotgun();
+
+	// Play local fire animation and particles
+	void LocalFire(const FVector_NetQuantize& TraceHitTarget);
+	void LocalShotgunFire(const TArray<FVector_NetQuantize>& TraceHitTargets);
 
 	UFUNCTION(Server, Reliable)
 	void ServerFire(const FVector_NetQuantize& TraceHitTarget);
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastFire(const FVector_NetQuantize& TraceHitTarget);
+
+	UFUNCTION(Server, Reliable)
+	void ServerShotgunFire(const TArray<FVector_NetQuantize>& TraceHitTargets);
+
+	UFUNCTION(Server, Reliable)
+	void MulticastShotgunFire(const TArray<FVector_NetQuantize>& TraceHitTargets);
 
 	// 计算屏幕中心命中结果
 	void TraceUnderCrosshairs(FHitResult& TraceHitResult);
@@ -128,8 +141,11 @@ protected:
 	void EquipPrimaryWeapon(AWeapon* WeaponToEquip);
 	// Equip secondary weapon
 	void EquipSecondaryWeapon(AWeapon* WeaponToEquip);
-	// Equip specified weapon
-	void EquipSpecifiedWeapon(AWeapon** WeaponToEquip);
+	// Equip specified weapon with key1 and key2
+	UFUNCTION(Server, Reliable)
+	void ServerEquipSpecifiedWeapon_1();
+	UFUNCTION(Server, Reliable)
+	void ServerEquipSpecifiedWeapon_2();
 
 private:
 	UPROPERTY()
@@ -144,9 +160,10 @@ private:
 	AWeapon* EquippedWeapon;
 	UPROPERTY(ReplicatedUsing = OnRep_SecondaryWeapon)
 	AWeapon* SecondaryWeapon;
-	
-	AWeapon** PrimaryWeaponPtr;	// Point to PrimaryWeapon(key Num1)
-	AWeapon** SecondaryWeaponPtr;	// Point to SecondaryWeapon(key Num2)
+	UPROPERTY(Replicated)
+	AWeapon* PrimaryWeaponPtr;	// Point to PrimaryWeapon(key Num1)
+	UPROPERTY(Replicated)
+	AWeapon* SecondaryWeaponPtr;	// Point to SecondaryWeapon(key Num2)
 
 	UPROPERTY(Replicated)
 	bool bAiming;

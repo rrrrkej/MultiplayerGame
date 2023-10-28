@@ -15,7 +15,17 @@ enum class EWeaponState : uint8
 	EWS_EquippedSecondary UMETA(DisplayName = "Equipped Secondary"),
 	EWS_Dropped UMETA(DisplayName = "Dropped"),
 	
-	EWS_MAX UMETA(DisplayName = "DefaultMAX"),
+	EWS_MAX UMETA(DisplayName = "DefaultMAX")
+};
+
+UENUM(BlueprintType)
+enum class EFireType : uint8
+{
+	EFT_HitScan UMETA(DisplayName = "Hit Scan Weapon"),
+	EFT_Projectile UMETA(DisplayName = "Hit Projectile"),
+	EFT_Shotgun UMETA(DisplayName = "Shotgun"),
+
+	EFT_MAX UMETA(DisplayName = "DefaultMAX")
 };
 
 class USphereComponent;
@@ -64,8 +74,26 @@ public:
 	*/
 	void EnableCustomDepth(bool bEnable);
 
+	/**
+	* Automatic fire
+	*/
+	UPROPERTY(EditAnywhere, Category = Combat)
+	float FireDelay = 0.15f;
+	UPROPERTY(EditAnywhere, Category = Combat)
+	bool bAutomatic = true;
+
 	//	true when spawn as default weapon
 	bool bDestroyWeapon = false;
+
+	// Weapon  bulllet fire type
+	UPROPERTY(EditAnywhere)
+	EFireType FireType;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
+	bool bUseScatter = false;
+
+	// Calculate HitTarget with random scatter
+	FVector TraceEndWithScatter(const FVector& HitTarget);
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -98,6 +126,15 @@ protected:
 		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex
 	);
+
+	/**
+	* Trace end with scatter
+	*/
+	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
+	float DistanceToSphere = 800.f;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
+	float SphereRadius = 75.f;
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
@@ -165,14 +202,6 @@ private:
 	UPROPERTY(EditAnywhere)
 	EWeaponType WeaponType;
 
-public:
-	/**
-	* Automatic fire
-	*/
-	UPROPERTY(EditAnywhere, Category = Combat)
-	float FireDelay = 0.15f;
-	UPROPERTY(EditAnywhere, Category = Combat)
-	bool bAutomatic = true;
 
 public:
 	void SetWeaponState(EWeaponState State);

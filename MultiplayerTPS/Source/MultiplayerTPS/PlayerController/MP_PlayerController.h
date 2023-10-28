@@ -141,7 +141,7 @@ private:
 	float PingAnimationRunningTime = 0.f;
 
 	UPROPERTY(EditAnywhere)
-	float CheckPingFrequency = 20.f;
+	float CheckPingFrequency = 5.f;
 
 	UPROPERTY(EditAnywhere)
 	float HighPingThreshold = 50.f;

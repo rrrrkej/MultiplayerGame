@@ -12,6 +12,7 @@
 #include "Casing.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "Blueprint/UserWidget.h"
+#include "Kismet/KismetMathLibrary.h"
 
 #include "MultiplayerTPS/DebugHeader.h"
 #include "MultiplayerTPS/MP_Components/CombatComponent.h"
@@ -48,6 +49,7 @@ AWeapon::AWeapon()
 	//construct PickupWidget
 	PickupWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("PickupWidget"));
 	PickupWidget->SetupAttachment(RootComponent);
+	PickupWidget->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void AWeapon::EnableCustomDepth(bool bEnable)
@@ -63,14 +65,10 @@ void AWeapon::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Server settings
-	if (GetLocalRole() == ENetRole::ROLE_Authority/*HasAuthority()*/) 
-	{
-		AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-		AreaSphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
-		AreaSphere->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnSphereOverlap);
-		AreaSphere->OnComponentEndOverlap.AddDynamic(this, &AWeapon::OnSphereEndOverlap);
-	}
+	AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	AreaSphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
+	AreaSphere->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnSphereOverlap);
+	AreaSphere->OnComponentEndOverlap.AddDynamic(this, &AWeapon::OnSphereEndOverlap);
 
 	if (PickupWidget)
 	{
@@ -101,7 +99,7 @@ void AWeapon::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 	AMP_Character* MP_Character = Cast<AMP_Character>(OtherActor);
 	if (MP_Character)
 	{
-		MP_Character->SetOverlappingWeapon(this);
+		MP_Character-> SetOverlappingWeapon(this);
 	}
 }
 
@@ -337,7 +335,11 @@ void AWeapon::Fire(const FVector& HitTarget)
 			}
 		}		  
 	}
-	SpendRound();
+	if (HasAuthority())
+	{
+		SpendRound();
+	}
+	
 }
 
 void AWeapon::Dropped()
@@ -356,3 +358,19 @@ void AWeapon::AddAmmo(int32 AmmoToAdd)
 	SetHUDAmmo();
 }
 
+FVector AWeapon::TraceEndWithScatter(const FVector& HitTarget)
+{
+	const USkeletalMeshSocket* MuzzleFlashSocket = GetWeaponMesh()->GetSocketByName("MuzzleFlash");
+	if (MuzzleFlashSocket == nullptr) return FVector();
+	const FTransform SocketTransform = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
+	const FVector TraceStart = SocketTransform.GetLocation();
+
+
+	const FVector ToTargetNormalized = (HitTarget - TraceStart).GetSafeNormal();
+	const FVector SphereCenter = TraceStart + ToTargetNormalized * DistanceToSphere;
+	const FVector RandVec = UKismetMathLibrary::RandomUnitVector() * FMath::FRandRange(0.f, SphereRadius);
+	const FVector EndLoc = SphereCenter + RandVec;
+	const FVector ToEndLoc = EndLoc - TraceStart;
+
+	return FVector(TraceStart + ToEndLoc / ToEndLoc.Size() * TRACE_LENGTH);
+}

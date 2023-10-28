@@ -9,6 +9,7 @@
 #include "MultiplayerTPS/DebugHeader.h"
 #include "MultiplayerTPS/Character/MP_AnimInstance.h"
 #include "MultiplayerTPS/Weapon/Projectile.h"
+#include "MultiplayerTPS/Weapon/Shotgun.h"
 
 #include "Engine/SkeletalMeshSocket.h"
 #include "Components/SphereComponent.h"
@@ -41,6 +42,8 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(UCombatComponent, CombatState);
 	DOREPLIFETIME(UCombatComponent, Grenades);
 	DOREPLIFETIME(UCombatComponent, SecondaryWeapon);
+	DOREPLIFETIME(UCombatComponent, PrimaryWeaponPtr);
+	DOREPLIFETIME(UCombatComponent, SecondaryWeaponPtr);
 }
 
 void UCombatComponent::BeginPlay()
@@ -206,7 +209,8 @@ void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
 		{
 			TraceHitResult.ImpactPoint = End;
 		}
-
+		if(TraceHitResult.GetComponent())
+	
 		if (TraceHitResult.GetActor() && TraceHitResult.GetActor()->Implements<UInteractWithCrosshairsInterface>())
 		{
 			CrosshairPackage.CrosshairColor = FLinearColor::Red;
@@ -256,14 +260,58 @@ void UCombatComponent::Fire()
 	if (CanFire())
 	{
 		bCanFire = false;
-		ServerFire(HitTarget);
+		
 		if (EquippedWeapon)
 		{
 			CrosshairShootingFactor = 0.75f;
+			switch (EquippedWeapon->FireType)
+			{
+			case EFireType::EFT_Projectile:
+				FireProjectileWeapon();
+				break;
+			case EFireType::EFT_HitScan:
+				FireHitScanWeapon();
+				break;
+			case EFireType::EFT_Shotgun:
+				FireShotgun();
+				break;
+			}
 		}
 		StartFireTimer();
+	}	
+}
+
+void UCombatComponent::FireProjectileWeapon()
+{
+	if (EquippedWeapon && Character)
+	{
+		HitTarget = EquippedWeapon->bUseScatter ? EquippedWeapon->TraceEndWithScatter(HitTarget) : HitTarget;
+		if(!Character->HasAuthority())	LocalFire(HitTarget);
+		ServerFire(HitTarget);
 	}
 	
+}
+
+void UCombatComponent::FireHitScanWeapon()
+{
+	if (EquippedWeapon && Character)
+	{
+		HitTarget = EquippedWeapon->bUseScatter ? EquippedWeapon->TraceEndWithScatter(HitTarget) : HitTarget;
+		if (!Character->HasAuthority())	LocalFire(HitTarget);  
+		ServerFire(HitTarget);
+	}
+}
+
+void UCombatComponent::FireShotgun()
+{
+	AShotgun* Shotgun = Cast<AShotgun>(EquippedWeapon);
+	if (Shotgun && Character)
+	{
+		TArray<FVector_NetQuantize> HitTargets;
+		Shotgun->ShotgunTraceEndWithScatter(HitTarget, HitTargets);
+		if (!Character->HasAuthority()) LocalShotgunFire(HitTargets);
+		ServerShotgunFire(HitTargets);
+	}
 }
 
 void UCombatComponent::StartFireTimer()
@@ -323,50 +371,75 @@ void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& Trac
 
 void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
 {
-	if (EquippedWeapon == nullptr) return;
-	
-	// Shotgun 单发装填开火
-	if (Character && CombatState == ECombatState::ECS_Reloading && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun)
-	{
-		Character->PlayFireMontage(bAiming);
-		EquippedWeapon->Fire(TraceHitTarget);
-		CombatState = ECombatState::ECS_Unoccupied;
-		return;
-	}
+	if (Character && Character->IsLocallyControlled() && !Character->HasAuthority()) return;
+	LocalFire(TraceHitTarget);
+}
+
+void UCombatComponent::ServerShotgunFire_Implementation(const TArray<FVector_NetQuantize>& TraceHitTargets)
+{
+	MulticastShotgunFire(TraceHitTargets);
+}
+
+void UCombatComponent::MulticastShotgunFire_Implementation(const TArray<FVector_NetQuantize>& TraceHitTargets)
+{
+	if (Character && Character->IsLocallyControlled() && !Character->HasAuthority()) return;
+	LocalShotgunFire(TraceHitTargets);
+}
+
+void UCombatComponent::LocalFire(const FVector_NetQuantize& TraceHitTarget)
+{
 	// 通用开火
 	if (Character && CombatState == ECombatState::ECS_Unoccupied)
 	{
 		Character->PlayFireMontage(bAiming);
 		EquippedWeapon->Fire(TraceHitTarget);
+		CombatState = ECombatState::ECS_Unoccupied;
+	}
+}
+
+void UCombatComponent::LocalShotgunFire(const TArray<FVector_NetQuantize>& TraceHitTargets)
+{
+	AShotgun* Shotgun = Cast<AShotgun>(EquippedWeapon);
+	if (Shotgun == nullptr || Character == nullptr) return;
+
+	// Shotgun 单发装填开火
+	if (CombatState == ECombatState::ECS_Reloading || CombatState == ECombatState::ECS_Unoccupied)
+	{
+		Character->PlayFireMontage(bAiming);
+		Shotgun->FireShotgun(TraceHitTargets);
+		CombatState = ECombatState::ECS_Unoccupied;
 	}
 }
 
 void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 {
+	
 	if (Character == nullptr || WeaponToEquip == nullptr) return;
 	if (CombatState != ECombatState::ECS_Unoccupied) return;
+	
 
 	if (EquippedWeapon == nullptr)
 	{
 		EquipPrimaryWeapon(WeaponToEquip);
-		PrimaryWeaponPtr = &WeaponToEquip;
+		PrimaryWeaponPtr = WeaponToEquip;
 	}
 	else if (EquippedWeapon != nullptr && SecondaryWeapon == nullptr)
 	{
 		EquipSecondaryWeapon(WeaponToEquip);
-		SecondaryWeaponPtr = &WeaponToEquip;
+		SecondaryWeaponPtr = WeaponToEquip;
 	}
 	else if (EquippedWeapon != nullptr && SecondaryWeapon != nullptr)
-	{
-		if (EquippedWeapon == *PrimaryWeaponPtr)
+	{	
+		
+		if (EquippedWeapon == PrimaryWeaponPtr)
 		{
 			EquipPrimaryWeapon(WeaponToEquip);
-			PrimaryWeaponPtr = &WeaponToEquip;
+			PrimaryWeaponPtr = WeaponToEquip;
 		}
-		else if (EquippedWeapon == *SecondaryWeaponPtr)
-		{
+		else if (EquippedWeapon == SecondaryWeaponPtr)
+		{	
 			EquipPrimaryWeapon(WeaponToEquip);
-			SecondaryWeaponPtr = &WeaponToEquip;
+			SecondaryWeaponPtr = WeaponToEquip;
 		}
 	}
 
@@ -379,6 +452,8 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 
 void UCombatComponent::SwapWeapons()
 {
+	if (CombatState != ECombatState::ECS_Unoccupied) return;
+
 	AWeapon* TempWeapon = EquippedWeapon;
 	EquippedWeapon = SecondaryWeapon;
 	SecondaryWeapon = TempWeapon;
@@ -420,10 +495,14 @@ void UCombatComponent::EquipSecondaryWeapon(AWeapon* WeaponToEquip)
 	WeaponToEquip->SetOwner(Character);
 }
 
-void UCombatComponent::EquipSpecifiedWeapon(AWeapon** WeaponToEquip)
+void UCombatComponent::ServerEquipSpecifiedWeapon_1_Implementation()
 {
-	if (WeaponToEquip == nullptr) return;
-	if (*WeaponToEquip == EquippedWeapon) return;
+	if (PrimaryWeaponPtr == EquippedWeapon) return;
+	else SwapWeapons();
+}
+void UCombatComponent::ServerEquipSpecifiedWeapon_2_Implementation()
+{
+	if (SecondaryWeaponPtr == EquippedWeapon) return;
 	else SwapWeapons();
 }
 

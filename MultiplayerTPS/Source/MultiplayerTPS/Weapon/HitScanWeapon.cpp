@@ -15,7 +15,7 @@
 void AHitScanWeapon::Fire(const FVector& HitTarget)
 {
 	Super::Fire(HitTarget);
-
+	//DrawDebugSphere(GetWorld(), HitTarget, 16.f, 12.f, FColor::Red, true);
 	//	Get InstigatorController used in ApplyDamage
 	APawn* OwnerPawn = Cast<APawn>(GetOwner());
 	if (OwnerPawn == nullptr) return;
@@ -26,10 +26,9 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 	{
 		FTransform SocketTransform = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
 		FVector Start = SocketTransform.GetLocation();
-		
 		FHitResult FireHit;
 		WeaponTraceHit(Start, HitTarget, FireHit);
-
+	
 		//	Apply Damage
 		AMP_Character* MP_Character = Cast<AMP_Character>(FireHit.GetActor());
 		if (MP_Character && HasAuthority() && InstigatorController)
@@ -90,7 +89,7 @@ void AHitScanWeapon::WeaponTraceHit(const FVector& TraceStart, const FVector& Hi
 	UWorld* World = GetWorld();
 	if (World)
 	{
-		FVector End = bUseScatter ?  TraceEndWithScatter(TraceStart, HitTarget) : TraceStart + (HitTarget - TraceStart) * 1.25f;
+		FVector End = TraceStart + (HitTarget - TraceStart) * 1.25f;
 
 		//	Line trace scan
 		World->LineTraceSingleByChannel(
@@ -105,6 +104,7 @@ void AHitScanWeapon::WeaponTraceHit(const FVector& TraceStart, const FVector& Hi
 		{
 			BeamEnd = OutHit.ImpactPoint;
 		}
+		//DrawDebugSphere(GetWorld(), BeamEnd, 16.f, 12.f, FColor::Red, true);
 		// Spawn bullet trail
 		if (BeamParticle)
 		{
@@ -124,23 +124,5 @@ void AHitScanWeapon::WeaponTraceHit(const FVector& TraceStart, const FVector& Hi
 	}
 }
 
-FVector AHitScanWeapon::TraceEndWithScatter(const FVector& TraceStart, const FVector& HitTarget)
-{
-	FVector ToTargetNormalized = (HitTarget - TraceStart).GetSafeNormal();
-	FVector SphereCenter = TraceStart + ToTargetNormalized * DistanceToSphere;
-	FVector RandVec = UKismetMathLibrary::RandomUnitVector() * FMath::FRandRange(0.f, SphereRadius);
-	FVector EndLoc = SphereCenter + RandVec ;
-	FVector ToEndLoc = EndLoc - TraceStart;
 
-	/*DrawDebugSphere(GetWorld(), SphereCenter, SphereRadius, 12, FColor::Red, true);
-	DrawDebugSphere(GetWorld(), EndLoc, 4.f, 12, FColor::Cyan, true);
-	DrawDebugLine(
-		GetWorld(),
-		TraceStart,
-		FVector(TraceStart + ToEndLoc / ToEndLoc.Size() * TRACE_LENGTH),
-		FColor::Red,
-		true
-	);*/
-	return FVector(TraceStart + ToEndLoc / ToEndLoc.Size() * TRACE_LENGTH);
-}
 
