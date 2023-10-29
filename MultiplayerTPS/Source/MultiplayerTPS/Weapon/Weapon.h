@@ -182,14 +182,21 @@ private:
 	UPROPERTY(EditAnywhere)
 	float ZoomInterpSpeed = 20.f;
 
-	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_Ammo, Category = Weapon)
+	UPROPERTY(EditAnywhere, Category = Weapon)
 	int32 Ammo;
 
-	UFUNCTION()
-	void OnRep_Ammo();
+	UFUNCTION(Client, Reliable)
+	void ClientUpdateAmmo(int32 ServerAmmo);
+	
+	UFUNCTION(Client, Reliable)
+	void ClientAddAmmo(int32 AmmoToAdd);
 
-	// Round means bullet, Ammo amount minuse 1
+	// Ammo amount minuse 1
+	// Client-side prediction
 	void SpendRound();
+
+	// The number of unprocessed server requests for Ammo
+	int32 SequenceAmmo = 0;
 
 	UPROPERTY(EditAnywhere, Category = Weapon)
 	int32 MagCapacity;

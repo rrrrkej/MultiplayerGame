@@ -777,6 +777,13 @@ void AMP_Character::SpawnDefaultWeapon()
 	}
 }
 
+bool AMP_Character::IsLocallyReloading()
+{
+	if (CombatComponent == nullptr) return false;
+
+	return CombatComponent->bLocallyReloading;
+}
+
 #pragma region InputBinding
 
 // Called to bind functionality to input

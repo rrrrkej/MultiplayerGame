@@ -226,6 +226,7 @@ void UCombatComponent::SetAiming(bool bIsAiming)
 {
 	if (Character == nullptr || EquippedWeapon == nullptr) return;
 	bAiming = bIsAiming;
+	if(Character->IsLocallyControlled())	bAimButtonPressed = bIsAiming;
 	ServerSetAiming(bIsAiming);
 	if (Character)
 	{
@@ -289,7 +290,6 @@ void UCombatComponent::FireProjectileWeapon()
 		if(!Character->HasAuthority())	LocalFire(HitTarget);
 		ServerFire(HitTarget);
 	}
-	
 }
 
 void UCombatComponent::FireHitScanWeapon()
@@ -339,6 +339,7 @@ void UCombatComponent::FireTimerFinished()
 bool UCombatComponent::CanFire()
 {
 	if (EquippedWeapon == nullptr) return false;
+	if (bLocallyReloading) return false;
 	//Shotgun特殊装填开火
 	if (!EquippedWeapon->IsEmpty() && bCanFire && CombatState == ECombatState::ECS_Reloading && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun) return true;
 	//通用开火
@@ -495,6 +496,14 @@ void UCombatComponent::EquipSecondaryWeapon(AWeapon* WeaponToEquip)
 	WeaponToEquip->SetOwner(Character);
 }
 
+void UCombatComponent::OnRep_Aiming()
+{
+	if (Character && Character->IsLocallyControlled())
+	{
+		bAiming = bAimButtonPressed;
+	}
+}
+
 void UCombatComponent::ServerEquipSpecifiedWeapon_1_Implementation()
 {
 	if (PrimaryWeaponPtr == EquippedWeapon) return;
@@ -613,9 +622,11 @@ void UCombatComponent::ReloadEmptyWeapon()
 
 void UCombatComponent::Reload()
 {
-	if (CarriedAmmo > 0 && CombatState == ECombatState::ECS_Unoccupied && EquippedWeapon && !EquippedWeapon->IsMagFull())
+	if (CarriedAmmo > 0 && CombatState == ECombatState::ECS_Unoccupied && EquippedWeapon && !EquippedWeapon->IsMagFull() && !bLocallyReloading)
 	{
 		ServerReload();
+		HandleReload();
+		bLocallyReloading = true;
 	}
 }
 
@@ -624,23 +635,27 @@ void UCombatComponent::ServerReload_Implementation()
 	if (Character == nullptr || EquippedWeapon == nullptr) return;
 
 	CombatState = ECombatState::ECS_Reloading;
-	HandleReload();
+	if(!Character->IsLocallyControlled())
+		HandleReload();
 }
 
 void UCombatComponent::HandleReload()
 {
+	if (Character == nullptr) return;
 	Character->PlayReloadMontage();
 }
 
 void UCombatComponent::FinishReloading()
 {
 	if (Character == nullptr) return;
+	bLocallyReloading = false;
 	if (Character->HasAuthority())
-	{
-		CombatState = ECombatState::ECS_Unoccupied;
+	{	
 		UpdateAmmoValues();
 	}
-	
+	// 信任本地， 无条件修改；以解决高RTT下的装弹开火延迟
+	CombatState = ECombatState::ECS_Unoccupied;
+
 	// Fire immediately when finish reloading
 	if (bFireButtonPressed)
 	{
@@ -721,7 +736,7 @@ void UCombatComponent::OnRep_CombatState()
 		break;
 
 	case ECombatState::ECS_Reloading:
-		HandleReload();
+		if(Character && !Character->IsLocallyControlled())	HandleReload();
 		break;
 
 	case ECombatState::ECS_ThrowingGrenade:

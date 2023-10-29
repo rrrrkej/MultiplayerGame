@@ -53,6 +53,9 @@ public:
 	// called in AmmoPickup::OnSphereOverlap()
 	void PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount);
 
+	// As label to locally reloading 
+	bool bLocallyReloading = false;
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -165,8 +168,11 @@ private:
 	UPROPERTY(Replicated)
 	AWeapon* SecondaryWeaponPtr;	// Point to SecondaryWeapon(key Num2)
 
-	UPROPERTY(Replicated)
-	bool bAiming;
+	UPROPERTY(ReplicatedUsing = OnRep_Aiming)
+	bool bAiming = false;
+	bool bAimButtonPressed = false;
+	UFUNCTION()
+	void OnRep_Aiming();
 
 	// initial WalkSpeed
 	UPROPERTY(EditAnywhere)

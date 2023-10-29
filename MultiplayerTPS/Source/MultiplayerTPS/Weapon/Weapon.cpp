@@ -90,7 +90,6 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AWeapon, WeaponState);
-	DOREPLIFETIME(AWeapon, Ammo);
 }
 
 // Bind delegate with AreaSphere
@@ -248,17 +247,42 @@ void AWeapon::SpendRound()
 {
 	Ammo = FMath::Clamp(Ammo - 1, 0, MagCapacity);
 	SetHUDAmmo();
+	if (HasAuthority())
+	{
+		ClientUpdateAmmo(Ammo);
+	}
+	else
+	{
+		SequenceAmmo++;
+	}
 }
 
-void AWeapon::OnRep_Ammo()
+void AWeapon::ClientUpdateAmmo_Implementation(int32 ServerAmmo)
 {
+	if (HasAuthority())	return;
+
+	Ammo = ServerAmmo;
+	SequenceAmmo--;
+	Ammo -= SequenceAmmo;
+	SetHUDAmmo();
+}
+
+void AWeapon::AddAmmo(int32 AmmoToAdd)
+{
+	Ammo = FMath::Clamp(Ammo + AmmoToAdd, 0, MagCapacity);
+	SetHUDAmmo();
+	ClientAddAmmo(AmmoToAdd);
+}
+
+void AWeapon::ClientAddAmmo_Implementation(int32 AmmoToAdd)
+{
+	if (HasAuthority())	return;
+	Ammo = FMath::Clamp(Ammo + AmmoToAdd, 0, MagCapacity);
 	OwnerCharacter = OwnerCharacter == nullptr ? Cast<AMP_Character>(GetOwner()) : OwnerCharacter;
-	
-	//Öð¿Ç×°ÌîÊ±£¬×°ÂúÍ£Ö¹¡£
-	if (OwnerCharacter && OwnerCharacter->GetCombatComponent() && IsMagFull() && this->WeaponType == EWeaponType::EWT_Shotgun)
+	if (OwnerCharacter && OwnerCharacter->GetCombatComponent() && IsMagFull())
 	{
 		OwnerCharacter->GetCombatComponent()->JumpToShotgunEnd();
-	}    
+	}
 	SetHUDAmmo();
 }
 
@@ -278,7 +302,6 @@ void AWeapon::OnRep_Owner()
 		{
 			SetHUDAmmo();
 		}
-		
 	}
 }
 
@@ -335,11 +358,7 @@ void AWeapon::Fire(const FVector& HitTarget)
 			}
 		}		  
 	}
-	if (HasAuthority())
-	{
-		SpendRound();
-	}
-	
+	SpendRound();
 }
 
 void AWeapon::Dropped()
@@ -350,12 +369,6 @@ void AWeapon::Dropped()
 	SetOwner(nullptr);
 	OwnerCharacter = nullptr;
 	OwnerPlayerController = nullptr;
-}
-
-void AWeapon::AddAmmo(int32 AmmoToAdd)
-{
-	Ammo = FMath::Clamp(Ammo + AmmoToAdd, 0, MagCapacity);
-	SetHUDAmmo();
 }
 
 FVector AWeapon::TraceEndWithScatter(const FVector& HitTarget)
