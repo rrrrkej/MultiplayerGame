@@ -261,9 +261,9 @@ void AWeapon::ClientUpdateAmmo_Implementation(int32 ServerAmmo)
 {
 	if (HasAuthority())	return;
 
-	Ammo = ServerAmmo;
-	SequenceAmmo--;
-	Ammo -= SequenceAmmo;
+	Ammo = ServerAmmo;	//	Check processing
+	SequenceAmmo--;		//	Numbers of RPC require not yet processing
+	Ammo -= SequenceAmmo;	//	prediction actual result
 	SetHUDAmmo();
 }
 

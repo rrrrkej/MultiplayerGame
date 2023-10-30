@@ -22,6 +22,9 @@ class AController;
 class USoundCue;
 class AMP_PlayerState;
 class UBuffComponent;
+class UBoxComponent;
+class ULagCompensationComponent;
+
 UCLASS()
 class MULTIPLAYERTPS_API AMP_Character : public ACharacter, public IInteractWithCrosshairsInterface
 {
@@ -31,13 +34,13 @@ public:
 	// Sets default values for this character's properties
 	AMP_Character();
 
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
 	virtual void OnRep_ReplicatedMovement() override;
+
 	// Handle what happens when the player gets eliminated
 	void Elim();
 	UFUNCTION(NetMulticast, Reliable)
@@ -58,6 +61,9 @@ public:
 
 	// Handle weapon state when character is elimmed
 	void HandleWeaponWhenElimed(AWeapon* Weapon);
+
+	UPROPERTY()
+	TMap<FName, UBoxComponent*> HitCollisionBoxes;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -72,13 +78,68 @@ protected:
 	
 	// Poll for any relevant classes and initizlize HUDoverlay class
 	void PollInit();
+
 	// Founction for Rotate In Place feature
 	void RotateInPlace(float DeltaTime);
 
 	// Set health progress bar in OverheadWidget
 	void SetOverheadHealth();
-private:
 
+	/**
+	* Hit boxes used for server-side rewind, parameter name as same as skeleton name
+	*/
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* head;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* pelvis;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* spine_02;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* spine_03;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* upperarm_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* upperarm_r;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* lowerarm_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* lowerarm_r;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* hand_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* hand_r;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* backpack; 
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* thigh_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* thigh_r;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* calf_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* calf_r;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* foot_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* foot_r;
+
+private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	USpringArmComponent* CameraBoom;
 
@@ -94,14 +155,17 @@ private:
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon); 
 	
+	/**
+	* Components
+	*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	UCombatComponent* CombatComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	UBuffComponent* BuffComponent;
 
-	UFUNCTION(Server, Reliable)
-	void ServerEquipButtonPressed();
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	ULagCompensationComponent* LagCompensationComponent;
 
 	/* aimoffset animation*/
 	float AO_Yaw;
@@ -287,6 +351,9 @@ protected:
 
 	/** Called for Interaction */
 	void Interaction(const FInputActionValue& Value);
+
+	UFUNCTION(Server, Reliable)
+	void ServerEquipButtonPressed();
 
 	/** Called for Crouch */
 	void CrouchPressed(const FInputActionValue& Value);
