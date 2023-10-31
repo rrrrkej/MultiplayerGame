@@ -4,8 +4,10 @@
 #include "LagCompensationComponent.h"
 #include "Components/BoxComponent.h"
 #include "DrawDebugHelpers.h"
+#include "Kismet/GameplayStatics.h"
 
 #include "MultiplayerTPS/Character/MP_Character.h"
+#include "MultiplayerTPS/Weapon/Weapon.h"
 
 ULagCompensationComponent::ULagCompensationComponent()
 {
@@ -20,7 +22,6 @@ void ULagCompensationComponent::BeginPlay()
 
 	FFramePackage Package;
 	SaveFramePackage(Package);
-	ShowFramePackage(Package);
 }
 
 void ULagCompensationComponent::SaveFramePackage(FFramePackage& Package)
@@ -38,13 +39,6 @@ void ULagCompensationComponent::SaveFramePackage(FFramePackage& Package)
 			Package.HitBoxInfo.Add(BoxPair.Key, BoxInformation);
 		}
 	}
-}
-
-void ULagCompensationComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	RecordFrame();
 }
 
 void ULagCompensationComponent::RecordFrame()
@@ -70,23 +64,33 @@ void ULagCompensationComponent::RecordFrame()
 	}
 }
 
-void ULagCompensationComponent::ShowFramePackage(const FFramePackage& Package, FColor Color)
+void ULagCompensationComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
-	for (const TPair<FName, FBoxInformation>& BoxInfo : Package.HitBoxInfo)
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	if (Character && Character->HasAuthority())
 	{
-		DrawDebugBox(
-			GetWorld(),
-			BoxInfo.Value.Location,
-			BoxInfo.Value.BoxExtent,
-			FQuat(BoxInfo.Value.Rotation),
-			Color,
-			false,
-			4.f
+		RecordFrame();
+	}
+}
+
+void ULagCompensationComponent::ServerScoreRequest_Implementation(AMP_Character* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime, AWeapon* Weapon)
+{
+	FServerSideRewindResult ConfirmResult = ServerSideRewind(HitCharacter, TraceStart, HitLocation, HitTime);
+
+	if (Character && HitCharacter && ConfirmResult.bHitConfimed && Weapon)
+	{
+		UGameplayStatics::ApplyDamage(
+			HitCharacter,
+			Weapon->GetDamage(),
+			Character->GetController(),
+			Weapon,
+			UDamageType::StaticClass()
 		);
 	}
 }
 
-FServerSideRewindResult ULagCompensationComponent::ServerSideRewind_Implementation(AMP_Character* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime)
+FServerSideRewindResult ULagCompensationComponent::ServerSideRewind(AMP_Character* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime)
 {
 	bool bReturn =
 		HitCharacter == nullptr ||
@@ -283,5 +287,21 @@ void ULagCompensationComponent::EnableCharacterMeshCollision(AMP_Character* HitC
 	if (HitCharacter && HitCharacter->GetMesh())
 	{
 		HitCharacter->GetMesh()->SetCollisionEnabled(CollisionEnabled);
+	}
+}
+
+void ULagCompensationComponent::ShowFramePackage(const FFramePackage& Package, FColor Color)
+{
+	for (const TPair<FName, FBoxInformation>& BoxInfo : Package.HitBoxInfo)
+	{
+		DrawDebugBox(
+			GetWorld(),
+			BoxInfo.Value.Location,
+			BoxInfo.Value.BoxExtent,
+			FQuat(BoxInfo.Value.Rotation),
+			Color,
+			false,
+			4.f
+		);
 	}
 }

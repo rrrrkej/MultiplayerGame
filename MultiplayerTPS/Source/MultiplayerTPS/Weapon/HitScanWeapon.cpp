@@ -3,13 +3,15 @@
 
 #include "HitScanWeapon.h"
 #include "Engine/SkeletalMeshSocket.h"
-#include "MultiplayerTPS/Character/MP_Character.h"
-#include "Kismet/GamePlayStatics.h"
 #include "particles/ParticleSystemComponent.h"
 #include "Sound/SoundCue.h"
+#include "Kismet/GamePlayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
-#include "WeaponTypes.h"
 
+#include "WeaponTypes.h"
+#include "MultiplayerTPS/Character/MP_Character.h"
+#include "MultiplayerTPS/MP_Components/LagCompensationComponent.h"
+#include "MultiplayerTPS/PlayerController/MP_PlayerController.h"
 #include "DrawDebugHelpers.h"
 
 void AHitScanWeapon::Fire(const FVector& HitTarget)
@@ -30,18 +32,37 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 		WeaponTraceHit(Start, HitTarget, FireHit);
 	
 		//	Apply Damage
-		AMP_Character* MP_Character = Cast<AMP_Character>(FireHit.GetActor());
-		if (MP_Character && HasAuthority() && InstigatorController)
+		AMP_Character* HitCharacter = Cast<AMP_Character>(FireHit.GetActor());
+		if (HitCharacter &&  InstigatorController)
 		{
-			UGameplayStatics::ApplyDamage(
-				MP_Character,
-				Damage,
-				InstigatorController,
-				this,
-				UDamageType::StaticClass()
-			);
+			// 问题：那服务器本机怎么办啊？
+			if (HasAuthority() && !bUseServerSideRewind)
+			{
+				UGameplayStatics::ApplyDamage(
+					HitCharacter,
+					Damage,
+					InstigatorController,
+					this,
+					UDamageType::StaticClass()
+				);
+			}
+			else if(!HasAuthority() && bUseServerSideRewind)
+			{
+				OwnerCharacter = OwnerCharacter == nullptr ? Cast<AMP_Character>(OwnerPawn) : OwnerCharacter;
+				OwnerController = OwnerController == nullptr ? Cast<AMP_PlayerController>(InstigatorController) : OwnerController;
+				if (OwnerCharacter && OwnerController && OwnerCharacter->GetLagCompensationComponent())
+				{
+					OwnerCharacter->GetLagCompensationComponent()->ServerScoreRequest(
+						HitCharacter,
+						Start,
+						FireHit.ImpactPoint,
+						OwnerController->GetServerTime() - OwnerController->SingleTripTime,
+						this
+					);
+				}
+			}
 		}
-
+		DrawDebugSphere(GetWorld(), FireHit.ImpactPoint, 10.f, 8, FColor::Black, true);
 		//	Spawn impact ParticleSystem
 		if (ImpactParticles)
 		{

@@ -47,6 +47,7 @@ struct FServerSideRewindResult
 
 class AMP_PlayerController;
 class AMP_Character;
+class AWeapon;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class MULTIPLAYERTPS_API ULagCompensationComponent : public UActorComponent
@@ -60,8 +61,7 @@ public:
 
 	void ShowFramePackage(const FFramePackage& Package, FColor Color = FColor::Orange);
 	
-	// Handle server-side rewind
-	UFUNCTION(Server, Reliable)
+	// Handle server-side rewind(Only work in server, Not RPC)
 	FServerSideRewindResult ServerSideRewind(AMP_Character* HitCharacter,
 		const FVector_NetQuantize& TraceStart, 
 		const FVector_NetQuantize& HitLocation, 
@@ -69,6 +69,16 @@ public:
 
 	// Store FFramePackage for MaxRecordTime
 	TDoubleLinkedList<FFramePackage> FrameHistory;
+
+	// Called by client, hit request
+	UFUNCTION(Server, Reliable)
+	void ServerScoreRequest(
+		AMP_Character* HitCharacter,
+		const FVector_NetQuantize& TraceStart,
+		const FVector_NetQuantize& HitLocation,
+		float HitTime,
+		AWeapon* Weapon
+	);
 
 protected:
 	virtual void BeginPlay() override;

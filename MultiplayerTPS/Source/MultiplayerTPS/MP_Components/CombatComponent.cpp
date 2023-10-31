@@ -389,7 +389,6 @@ void UCombatComponent::MulticastShotgunFire_Implementation(const TArray<FVector_
 
 void UCombatComponent::LocalFire(const FVector_NetQuantize& TraceHitTarget)
 {
-	// Í¨ÓÃ¿ª»ð
 	if (Character && CombatState == ECombatState::ECS_Unoccupied)
 	{
 		Character->PlayFireMontage(bAiming);

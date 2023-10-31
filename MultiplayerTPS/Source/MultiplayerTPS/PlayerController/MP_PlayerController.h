@@ -41,6 +41,9 @@ public:
 	void HandleMatchHasStarted();
 	void HandleCooldown();
 
+	// half time of RTT
+	float SingleTripTime = 0.f;
+
 protected:
 	virtual void BeginPlay() override;
 	void SetHUDTime();
@@ -136,7 +139,7 @@ private:
 	float HighPingRunningTime = 0.f;
 
 	UPROPERTY(EditAnywhere)
-	float HighPingDuration = 5.f;
+	float HighPingDuration = 4.f;
 	
 	float PingAnimationRunningTime = 0.f;
 

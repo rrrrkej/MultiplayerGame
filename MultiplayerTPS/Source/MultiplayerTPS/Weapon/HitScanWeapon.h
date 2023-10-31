@@ -30,9 +30,6 @@ protected:
 	UPROPERTY(EditAnywhere)
 	USoundCue* HitSound; // 命中音效
 
-	UPROPERTY(EditAnywhere)
-	float Damage = 40.f; // 单次命中伤害
-
 private:
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* BeamParticle; // 弹道轨迹

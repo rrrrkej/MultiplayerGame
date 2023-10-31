@@ -115,7 +115,7 @@ void AWeapon::ShowScopeWidget_Implementation(bool bIsAiming)
 {
 	/*if (!ScopeWidget && ScopeWidgetClass)
 	{
-		ScopeWidget = CreateWidget<UUserWidget>(OwnerPlayerController, ScopeWidgetClass);
+		ScopeWidget = CreateWidget<UUserWidget>(OwnerController, ScopeWidgetClass);
 		ScopeZoomIn = ScopeWidget->GetAnimationByName(TEXT("ScopeZoomIn"));
 		ScopeWidget->AddToViewport();
 	}
@@ -293,7 +293,7 @@ void AWeapon::OnRep_Owner()
 	if (Owner == nullptr)
 	{
 		OwnerCharacter = nullptr;
-		OwnerPlayerController = nullptr;
+		OwnerController = nullptr;
 	}
 	else
 	{
@@ -310,10 +310,10 @@ void AWeapon::SetHUDAmmo()
 	OwnerCharacter = OwnerCharacter == nullptr ? Cast<AMP_Character>(GetOwner()) : OwnerCharacter;
 	if (OwnerCharacter)
 	{
-		OwnerPlayerController = OwnerPlayerController == nullptr ? Cast<AMP_PlayerController>(OwnerCharacter->Controller) : OwnerPlayerController;
-		if (OwnerPlayerController)
+		OwnerController = OwnerController == nullptr ? Cast<AMP_PlayerController>(OwnerCharacter->Controller) : OwnerController;
+		if (OwnerController)
 		{
-			OwnerPlayerController->SetHUDWeaponAmmo(Ammo);
+			OwnerController->SetHUDWeaponAmmo(Ammo);
 		}
 	}
 }
@@ -368,7 +368,7 @@ void AWeapon::Dropped()
 	WeaponMesh->DetachFromComponent(DetachRules);
 	SetOwner(nullptr);
 	OwnerCharacter = nullptr;
-	OwnerPlayerController = nullptr;
+	OwnerController = nullptr;
 }
 
 FVector AWeapon::TraceEndWithScatter(const FVector& HitTarget)
