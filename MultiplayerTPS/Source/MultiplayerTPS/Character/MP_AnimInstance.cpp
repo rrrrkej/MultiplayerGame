@@ -78,6 +78,7 @@ void UMP_AnimInstance::NativeUpdateAnimation(float DeltaTime)
 	// Update RightHand Transform and LeftHandTransform
 	if (bWeaponEquipped && EquippedWeapon && EquippedWeapon->GetWeaponMesh() && MP_Character->GetMesh())
 	{
+		// Calculate result of LeftHandTransform as left hand bones IK target
 		LeftHandTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("LeftHandSocket"), ERelativeTransformSpace::RTS_World);
 		FVector OutPosition;
 		FRotator OutRotation;

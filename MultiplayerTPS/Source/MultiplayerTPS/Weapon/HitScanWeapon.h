@@ -21,8 +21,6 @@ public:
 
 
 protected:
-	
-
 	// Spawn BeamParticle and calculate HitResult
 	void WeaponTraceHit(const FVector& TraceStart, const FVector& HitTarget, FHitResult& OutHit);
 
@@ -46,4 +44,15 @@ private:
 	USoundCue* FireSound; // ¿ª»ðÒôÐ§
 
 
+};
+
+class Singleton
+{
+public:
+	static Singleton& Get()
+	{
+		Singleton instance;
+		return instance;
+	}
+	void Hello() {}
 };

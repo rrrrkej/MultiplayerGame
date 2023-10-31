@@ -64,6 +64,7 @@ public:
 
 	UPROPERTY()
 	TMap<FName, UBoxComponent*> HitCollisionBoxes;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -409,4 +410,5 @@ public:
 	FORCEINLINE UStaticMeshComponent* GetAttachedGrenade() const { return AttachedGrenade; } // return AttachedGrenade
 	FORCEINLINE UBuffComponent* GetBuffComponent() const { return BuffComponent; } // return buff component
 	bool IsLocallyReloading();
+	FORCEINLINE ULagCompensationComponent* GetLagCompensationComponent() { return LagCompensationComponent; } // return LagCompensation
 };
