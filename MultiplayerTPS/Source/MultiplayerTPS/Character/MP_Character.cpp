@@ -613,6 +613,7 @@ void AMP_Character::ReceiveDamage(AActor* DamagedActor, float Damage, const UDam
 {
 	if (bElimmed) return;
 
+	DebugHeader::Print(FString::Printf(TEXT("receive damage: %f"), Damage), FColor::Blue);
 	//	Received total damage
 	float TotalDamage = Damage;
 	if (Shield > 0.f)
@@ -1080,7 +1081,6 @@ void AMP_Character::EquipPrimaryWeapon(const FInputActionValue& Value)
 {
 	if (CombatComponent && CombatComponent->PrimaryWeaponPtr)
 	{
-		DebugHeader::Print("ServerEquipSpecifiedWeapon_111111111();");
 		CombatComponent->ServerEquipSpecifiedWeapon_1();
 	}
 }
@@ -1089,7 +1089,6 @@ void AMP_Character::EquipSecondaryWeapon(const FInputActionValue& Value)
 {
 	if (CombatComponent && CombatComponent->SecondaryWeaponPtr)
 	{
-		DebugHeader::Print("ServerEquipSpecifiedWeapon_22222222222();");
 		CombatComponent->ServerEquipSpecifiedWeapon_2();
 	}
 }

@@ -7,12 +7,13 @@
 #include "Sound/SoundCue.h"
 #include "Kismet/GamePlayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "DrawDebugHelpers.h"
 
 #include "WeaponTypes.h"
 #include "MultiplayerTPS/Character/MP_Character.h"
 #include "MultiplayerTPS/MP_Components/LagCompensationComponent.h"
 #include "MultiplayerTPS/PlayerController/MP_PlayerController.h"
-#include "DrawDebugHelpers.h"
+#include "MultiplayerTPS/DebugHeader.h"
 
 void AHitScanWeapon::Fire(const FVector& HitTarget)
 {
@@ -32,10 +33,10 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 		WeaponTraceHit(Start, HitTarget, FireHit);
 	
 		//	Apply Damage
+		// 问题：服务器和客户端使用不用的结算规则，但是判断分支并不完全
 		AMP_Character* HitCharacter = Cast<AMP_Character>(FireHit.GetActor());
 		if (HitCharacter &&  InstigatorController)
 		{
-			// 问题：那服务器本机怎么办啊？
 			if (HasAuthority() && !bUseServerSideRewind)
 			{
 				UGameplayStatics::ApplyDamage(
@@ -50,7 +51,7 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 			{
 				OwnerCharacter = OwnerCharacter == nullptr ? Cast<AMP_Character>(OwnerPawn) : OwnerCharacter;
 				OwnerController = OwnerController == nullptr ? Cast<AMP_PlayerController>(InstigatorController) : OwnerController;
-				if (OwnerCharacter && OwnerController && OwnerCharacter->GetLagCompensationComponent())
+				if (OwnerCharacter && OwnerController && OwnerCharacter->GetLagCompensationComponent() && OwnerCharacter->IsLocallyControlled())
 				{
 					OwnerCharacter->GetLagCompensationComponent()->ServerScoreRequest(
 						HitCharacter,
@@ -62,7 +63,6 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 				}
 			}
 		}
-		DrawDebugSphere(GetWorld(), FireHit.ImpactPoint, 10.f, 8, FColor::Black, true);
 		//	Spawn impact ParticleSystem
 		if (ImpactParticles)
 		{

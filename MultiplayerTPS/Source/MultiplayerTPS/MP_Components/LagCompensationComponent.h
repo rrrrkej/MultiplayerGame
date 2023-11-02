@@ -31,6 +31,9 @@ struct FFramePackage
 
 	UPROPERTY()
 	TMap<FName, FBoxInformation> HitBoxInfo;	// key:name of BoxComponent, value: related info
+
+	UPROPERTY()
+	AMP_Character* Character;	//	作为存储包时，此处为本机charcter，也就是初始值；作为GetFrameToCheck()返回值时，返回的是HitCharacter及其信息
 };
 
 USTRUCT(BlueprintType)
@@ -43,6 +46,17 @@ struct FServerSideRewindResult
 
 	UPROPERTY()
 	bool bHeadShot;
+};
+
+USTRUCT(BlueprintType)
+struct FShotgunServerSideRewindResult
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TMap<AMP_Character*, uint32> HeadShots;
+	UPROPERTY()
+	TMap<AMP_Character*, uint32> BodyShots;
 };
 
 class AMP_PlayerController;
@@ -61,10 +75,19 @@ public:
 
 	void ShowFramePackage(const FFramePackage& Package, FColor Color = FColor::Orange);
 	
-	// Handle server-side rewind(Only work in server, Not RPC)
+	/**
+	* Handle server - side rewind(Only work in server, Not RPC)
+	*/ 
 	FServerSideRewindResult ServerSideRewind(AMP_Character* HitCharacter,
 		const FVector_NetQuantize& TraceStart, 
 		const FVector_NetQuantize& HitLocation, 
+		float HitTime);
+
+	// return SSR result of Shotgun
+	FShotgunServerSideRewindResult ShotgunServerSideRewind(
+		const TArray<AMP_Character*>& HitCharacters,
+		const FVector_NetQuantize& TraceStart,
+		const TArray<FVector_NetQuantize>& HitLocation,
 		float HitTime);
 
 	// Store FFramePackage for MaxRecordTime
@@ -75,15 +98,25 @@ public:
 	void ServerScoreRequest(
 		AMP_Character* HitCharacter,
 		const FVector_NetQuantize& TraceStart,
-		const FVector_NetQuantize& HitLocation,
+		const FVector_NetQuantize& HitLocations,
 		float HitTime,
 		AWeapon* Weapon
 	);
+	
+	UFUNCTION(Server, Reliable)
+	void ShotgunServerScoreRequest(
+		const TArray<AMP_Character*>& HitCharacters,
+		const FVector_NetQuantize& TraceStart,
+		const TArray<FVector_NetQuantize>& HitLocations,
+		float HitTime);
 
 protected:
 	virtual void BeginPlay() override;
 
 	void SaveFramePackage(FFramePackage& Package);
+
+	//	return the package related to HitCharacter
+	FFramePackage GetFrameToCheck(AMP_Character* HitCharacter, float HitTime);
 
 	//	Calculate interpolation framepackage
 	FFramePackage InterpBetweenFrames(const FFramePackage& OlderFrame, const FFramePackage& YoungerFrame, float HitTime);
@@ -95,6 +128,13 @@ protected:
 		const FVector_NetQuantize& TraceStart,
 		const FVector_NetQuantize& HitLocation);
 	
+	// Handle Server-Side Rewind hit infomation for shotgun
+	FShotgunServerSideRewindResult ShotgunConfirmHit(
+		const TArray<FFramePackage>& FramePackages,
+		const FVector_NetQuantize& TraceStart,
+		const TArray<FVector_NetQuantize>& HitLocations
+		);
+
 	// Save current framepackage
 	void CacheBoxPositions(AMP_Character* HitCharacter, FFramePackage& OutFramepackage);
 	// Move current framepackage to HitTime framepackage

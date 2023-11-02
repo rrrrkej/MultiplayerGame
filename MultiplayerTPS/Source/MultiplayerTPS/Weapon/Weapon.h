@@ -55,7 +55,7 @@ public:
 
 	void SetHUDAmmo();
 	void ShowPickupWidget(bool bShowWidget);
-	//Play Fire animation
+	//Play Fire animation, spend round
 	virtual void Fire(const FVector& HitTarget);
 	// Drop weapon
 	void Dropped();
