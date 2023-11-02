@@ -296,21 +296,24 @@ FShotgunServerSideRewindResult ULagCompensationComponent::ShotgunConfirmHit(cons
 		FFramePackage CurrentFrame;
 		CurrentFrame.Character = Frame.Character;
 		CacheBoxPositions(Frame.Character, CurrentFrame);
+		MoveBoxes(Frame.Character, Frame);
 		EnableCharacterMeshCollision(Frame.Character, ECollisionEnabled::NoCollision);
 		CurrentFrames.Add(CurrentFrame);
 	}
 
-	// Set head BoxComponent collision enabled to all framepackage.Character
-	for (const FFramePackage& Frame : FramePackages)
+	// Enable HitCharacter's BoxCollisions
+	for (const FFramePackage& FramePackage : FramePackages)
 	{
-		// Enable collision for the head first
-		UBoxComponent* HeadBox = Frame.Character->HitCollisionBoxes[FName("head")];
-		HeadBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-		HeadBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+		for (TPair<FName, UBoxComponent*>& BoxPair : FramePackage.Character->HitCollisionBoxes)
+		{
+			if (BoxPair.Value == nullptr) continue;
+			BoxPair.Value->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+			BoxPair.Value->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+		}
 	}
 
+	// Check HitLocations
 	UWorld* World = GetWorld();
-	// check for head shots
 	for (const FVector_NetQuantize& HitLocation : HitLocations)
 	{
 		FHitResult ConfirmHitResult;
@@ -326,59 +329,35 @@ FShotgunServerSideRewindResult ULagCompensationComponent::ShotgunConfirmHit(cons
 			AMP_Character* HitCharacter = Cast<AMP_Character>(ConfirmHitResult.GetActor());
 			if (HitCharacter)
 			{
-				if (ShotgunResult.HeadShots.Contains(HitCharacter))
+				// check if hit head
+				FName SocketName = ConfirmHitResult.GetComponent()->GetFName();
+				if (SocketName == "head")
 				{
-					ShotgunResult.HeadShots[HitCharacter]++;
+					if (ShotgunResult.HeadShots.Contains(HitCharacter))
+					{
+						ShotgunResult.HeadShots[HitCharacter]++;
+					}
+					else
+					{
+
+						ShotgunResult.HeadShots.Emplace(HitCharacter, 1);
+					}
 				}
 				else
 				{
-					ShotgunResult.HeadShots.Emplace(HitCharacter, 1);
+					if (ShotgunResult.BodyShots.Contains(HitCharacter))
+					{
+						ShotgunResult.BodyShots[HitCharacter]++;
+					}
+					else
+					{
+						ShotgunResult.BodyShots.Emplace(HitCharacter, 1);
+					}
 				}
 			}
 		}
 	}
 	
-	// enable collision for all boxes, than  disable for head box
-	for (const FFramePackage& Frame : FramePackages)
-	{
-		for (TPair<FName, UBoxComponent*>& HitBoxPair : Frame.Character->HitCollisionBoxes)
-		{
-			if (HitBoxPair.Value == nullptr) continue;
-			HitBoxPair.Value->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-			HitBoxPair.Value->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
-		}
-		UBoxComponent* HeadBox = Frame.Character->HitCollisionBoxes[FName("head")];
-		HeadBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	}
-
-	// check for body shots
-	for (const FVector_NetQuantize& HitLocation : HitLocations)
-	{
-		FHitResult ConfirmHitResult;
-		const FVector TraceEnd = TraceStart + (HitLocation - TraceStart) * 1.25f;
-		if (World)
-		{
-			World->LineTraceSingleByChannel(
-				ConfirmHitResult,
-				TraceStart,
-				TraceEnd,
-				ECollisionChannel::ECC_Visibility
-			);
-			AMP_Character* HitCharacter = Cast<AMP_Character>(ConfirmHitResult.GetActor());
-			if (HitCharacter)
-			{
-				if (ShotgunResult.BodyShots.Contains(HitCharacter))
-				{
-					ShotgunResult.BodyShots[HitCharacter]++;
-				}
-				else
-				{
-					ShotgunResult.BodyShots.Emplace(HitCharacter, 1);
-				}
-			}
-		}
-	}
-
 	// Reset HitBoxes and MeshCollision to all framepackage.Character
 	for (const FFramePackage& Frame : CurrentFrames)
 	{
