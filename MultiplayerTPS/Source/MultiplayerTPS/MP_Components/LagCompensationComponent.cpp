@@ -8,6 +8,7 @@
 
 #include "MultiplayerTPS/Character/MP_Character.h"
 #include "MultiplayerTPS/Weapon/Weapon.h"
+#include "MultiplayerTPS/DebugHeader.h"
 
 ULagCompensationComponent::ULagCompensationComponent()
 {
@@ -339,7 +340,6 @@ FShotgunServerSideRewindResult ULagCompensationComponent::ShotgunConfirmHit(cons
 					}
 					else
 					{
-
 						ShotgunResult.HeadShots.Emplace(HitCharacter, 1);
 					}
 				}

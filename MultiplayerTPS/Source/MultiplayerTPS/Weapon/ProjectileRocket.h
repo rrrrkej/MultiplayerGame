@@ -17,6 +17,12 @@ class MULTIPLAYERTPS_API AProjectileRocket : public AProjectile
 public:
 	AProjectileRocket();
 	virtual void Destroyed() override;
+
+#if WITH_EDITOR
+	//	当UPROPERTY()的值进行变动时，会触发该函数的委托，传入被变动的Event
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& Event) override;
+#endif
+
 protected:
 	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;
 	virtual void BeginPlay() override;
