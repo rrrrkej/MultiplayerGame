@@ -6,6 +6,10 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 
+#include "MultiplayerTPS/Character/MP_Character.h"
+#include "MultiplayerTPS/PlayerController/MP_PlayerController.h"
+#include "MultiplayerTPS/MP_Components/LagCompensationComponent.h"
+
 AProjectileBullet::AProjectileBullet()
 {
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
@@ -35,26 +39,42 @@ void AProjectileBullet::PostEditChangeProperty(FPropertyChangedEvent& Event)
 
 void AProjectileBullet::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	ACharacter* OwnerCharacter = Cast<ACharacter>(GetOwner());
+	AMP_Character* OwnerCharacter = Cast<AMP_Character>(GetOwner());
 	if (OwnerCharacter)
 	{
-		AController* OwnerController = OwnerCharacter->Controller;
+		AMP_PlayerController* OwnerController = Cast<AMP_PlayerController>(OwnerCharacter->Controller);
 		if (OwnerController)
 		{
-			UGameplayStatics::ApplyDamage(OtherActor, Damage, OwnerController, this, UDamageType::StaticClass());
+			if (OwnerCharacter->HasAuthority() && !bUseServerSideRewind)
+			{
+				UGameplayStatics::ApplyDamage(OtherActor, Damage, OwnerController, this, UDamageType::StaticClass());
+				// Super called Destroy() as end.
+				Super::OnHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit);
+				return;
+			}
+
+			AMP_Character* HitCharacter = Cast<AMP_Character>(OtherActor);
+			if (bUseServerSideRewind && OwnerCharacter->GetLagCompensationComponent() && OwnerCharacter->IsLocallyControlled() && HitCharacter)
+			{
+				OwnerCharacter->GetLagCompensationComponent()->ProjectileServerScoreRequest(
+					HitCharacter,
+					TraceStart,
+					InitialVelocity,
+					OwnerController->GetServerTime() - OwnerController->SingleTripTime
+				);
+				// Super called Destroy() as end.
+				Super::OnHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit);
+				return;
+			}
 		}
 	}
-
-	
-	// Super called Destroy() as end.
-	Super::OnHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit);
 }
 
 void AProjectileBullet::BeginPlay()
 {
 	Super::BeginPlay();
 
-	FPredictProjectilePathParams PathParams;
+	/*FPredictProjectilePathParams PathParams;
 	PathParams.bTraceWithChannel = true;
 	PathParams.bTraceWithCollision = true;
 	PathParams.DrawDebugTime = 5.f;
@@ -69,5 +89,5 @@ void AProjectileBullet::BeginPlay()
 
 	FPredictProjectilePathResult PathResult;
 
-	UGameplayStatics::PredictProjectilePath(this, PathParams, PathResult);
+	UGameplayStatics::PredictProjectilePath(this, PathParams, PathResult);*/
 }

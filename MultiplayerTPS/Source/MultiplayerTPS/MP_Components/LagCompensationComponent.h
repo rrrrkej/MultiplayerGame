@@ -75,15 +75,22 @@ public:
 
 	void ShowFramePackage(const FFramePackage& Package, FColor Color = FColor::Orange);
 	
-	/**
-	* Handle server - side rewind(Only work in server, Not RPC)
-	*/ 
-	FServerSideRewindResult ServerSideRewind(AMP_Character* HitCharacter,
+	//SSR for Hitscan 
+	FServerSideRewindResult ServerSideRewind(
+		AMP_Character* HitCharacter,
 		const FVector_NetQuantize& TraceStart, 
 		const FVector_NetQuantize& HitLocation, 
 		float HitTime);
 
-	// return SSR result of Shotgun
+	// SSR for Projectile
+	FServerSideRewindResult ProjectileServerSideRewind(
+		AMP_Character* HitCharacter,
+		const FVector_NetQuantize& TraceStart,
+		const FVector_NetQuantize100& InitialVelocity,
+		float HitTime
+	);
+
+	// SSR for Shotgun
 	FShotgunServerSideRewindResult ShotgunServerSideRewind(
 		const TArray<AMP_Character*>& HitCharacters,
 		const FVector_NetQuantize& TraceStart,
@@ -93,7 +100,7 @@ public:
 	// Store FFramePackage for MaxRecordTime
 	TDoubleLinkedList<FFramePackage> FrameHistory;
 
-	// Called by client, hit request
+	// ServerRPC :
 	UFUNCTION(Server, Reliable)
 	void ServerScoreRequest(
 		AMP_Character* HitCharacter,
@@ -103,6 +110,16 @@ public:
 		AWeapon* Weapon
 	);
 	
+	//ServerRPC :
+	UFUNCTION(Server, Reliable)
+	void ProjectileServerScoreRequest(
+		AMP_Character* HitCharacter,
+		const FVector_NetQuantize& TraceStart,
+		const FVector_NetQuantize100& InitialVelocity,
+		float HitTime
+	);
+
+	// ServerRPC :
 	UFUNCTION(Server, Reliable)
 	void ShotgunServerScoreRequest(
 		const TArray<AMP_Character*>& HitCharacters,
@@ -127,6 +144,15 @@ protected:
 		AMP_Character* HitCharacter,
 		const FVector_NetQuantize& TraceStart,
 		const FVector_NetQuantize& HitLocation);
+	
+	// Confirm hit for Projectile
+	FServerSideRewindResult ProjectileConfirmHit(
+		const FFramePackage& Package,
+		AMP_Character* HitCharacter,
+		const FVector_NetQuantize& TraceStart,
+		const FVector_NetQuantize100& InitialVelocity,
+		float HitTime
+	);
 	
 	// Handle Server-Side Rewind hit infomation for shotgun
 	FShotgunServerSideRewindResult ShotgunConfirmHit(

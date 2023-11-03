@@ -33,35 +33,35 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 		WeaponTraceHit(Start, HitTarget, FireHit);
 	
 		//	Apply Damage
-		// 问题：服务器和客户端使用不用的结算规则，但是判断分支并不完全
 		AMP_Character* HitCharacter = Cast<AMP_Character>(FireHit.GetActor());
 		if (HitCharacter &&  InstigatorController)
 		{
-			if (HasAuthority() && !bUseServerSideRewind)
-			{
-				UGameplayStatics::ApplyDamage(
-					HitCharacter,
-					Damage,
-					InstigatorController,
-					this,
-					UDamageType::StaticClass()
-				);
-			}
-			else if(!HasAuthority() && bUseServerSideRewind)
-			{
-				OwnerCharacter = OwnerCharacter == nullptr ? Cast<AMP_Character>(OwnerPawn) : OwnerCharacter;
-				OwnerController = OwnerController == nullptr ? Cast<AMP_PlayerController>(InstigatorController) : OwnerController;
-				if (OwnerCharacter && OwnerController && OwnerCharacter->GetLagCompensationComponent() && OwnerCharacter->IsLocallyControlled())
+			bool bCauseAuthDamage = !bUseServerSideRewind || OwnerPawn->IsLocallyControlled();
+				if (HasAuthority() && bCauseAuthDamage)
 				{
-					OwnerCharacter->GetLagCompensationComponent()->ServerScoreRequest(
+					UGameplayStatics::ApplyDamage(
 						HitCharacter,
-						Start,
-						FireHit.ImpactPoint,
-						OwnerController->GetServerTime() - OwnerController->SingleTripTime,
-						this
+						Damage,
+						InstigatorController,
+						this,
+						UDamageType::StaticClass()
 					);
 				}
-			}
+				if(!HasAuthority() && bUseServerSideRewind)
+				{
+					OwnerCharacter = OwnerCharacter == nullptr ? Cast<AMP_Character>(OwnerPawn) : OwnerCharacter;
+					OwnerController = OwnerController == nullptr ? Cast<AMP_PlayerController>(InstigatorController) : OwnerController;
+					if (OwnerCharacter && OwnerController && OwnerCharacter->GetLagCompensationComponent() && OwnerCharacter->IsLocallyControlled())
+					{
+						OwnerCharacter->GetLagCompensationComponent()->ServerScoreRequest(
+							HitCharacter,
+							Start,
+							FireHit.ImpactPoint,
+							OwnerController->GetServerTime() - OwnerController->SingleTripTime,
+							this
+						);
+					}
+				}
 		}
 		//	Spawn impact ParticleSystem
 		if (ImpactParticles)

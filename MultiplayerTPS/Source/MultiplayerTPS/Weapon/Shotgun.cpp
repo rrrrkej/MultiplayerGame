@@ -68,45 +68,43 @@ void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& HitTargets)
 				);
 			}
 		}
-
-		TArray<AMP_Character*> HitCharacters;
-		for (auto HitPair : HitMap)
+	}
+	TArray<AMP_Character*> HitCharacters;
+	for (auto HitPair : HitMap)
+	{
+		// Apply damage in server
+		if (HitPair.Key && InstigatorController)
 		{
-			// Apply damage in server
-			if (HitPair.Key && InstigatorController)
+			bool bCauseAuthDamage = !bUseServerSideRewind || OwnerPawn->IsLocallyControlled();
+			if (HasAuthority() && bCauseAuthDamage)
 			{
-				if (HasAuthority() && !bUseServerSideRewind)
-				{
-					UGameplayStatics::ApplyDamage(
-						HitPair.Key,	//	Character be hitted
-						Damage * HitPair.Value,	//	Multiplay Damage by number of times hit
-						InstigatorController,
-						this,
-						UDamageType::StaticClass()
-					);
-				}
-				HitCharacters.Add(HitPair.Key);
-			}
-		}
-
-		//	Apply damage with LagCompensation
-		
-		if (!HasAuthority() && bUseServerSideRewind)
-		{
-			OwnerCharacter = OwnerCharacter == nullptr ? Cast<AMP_Character>(OwnerPawn) : OwnerCharacter;
-			OwnerController = OwnerController == nullptr ? Cast<AMP_PlayerController>(InstigatorController) : OwnerController;
-
-			if (OwnerCharacter && OwnerController && OwnerCharacter->GetLagCompensationComponent() && OwnerCharacter->IsLocallyControlled())
-			{
-				OwnerCharacter->GetLagCompensationComponent()->ShotgunServerScoreRequest(
-					HitCharacters,
-					Start,
-					HitTargets,
-					OwnerController->GetServerTime() - OwnerController->SingleTripTime
+				UGameplayStatics::ApplyDamage(
+					HitPair.Key,	//	Character be hitted
+					Damage * HitPair.Value,	//	Multiplay Damage by number of times hit
+					InstigatorController,
+					this,
+					UDamageType::StaticClass()
 				);
 			}
+			HitCharacters.Add(HitPair.Key);
 		}
-		DrawDebugSphere(GetWorld(), FireHit.ImpactPoint, 10, 16, FColor::Orange, true);
+	}
+
+	//	Apply damage with LagCompensation
+	if (!HasAuthority() && bUseServerSideRewind)
+	{
+		OwnerCharacter = OwnerCharacter == nullptr ? Cast<AMP_Character>(OwnerPawn) : OwnerCharacter;
+		OwnerController = OwnerController == nullptr ? Cast<AMP_PlayerController>(InstigatorController) : OwnerController;
+
+		if (OwnerCharacter && OwnerController && OwnerCharacter->GetLagCompensationComponent() && OwnerCharacter->IsLocallyControlled())
+		{
+			OwnerCharacter->GetLagCompensationComponent()->ShotgunServerScoreRequest(
+				HitCharacters,
+				Start,
+				HitTargets,
+				OwnerController->GetServerTime() - OwnerController->SingleTripTime
+			);
+		}
 	}
 }
 
