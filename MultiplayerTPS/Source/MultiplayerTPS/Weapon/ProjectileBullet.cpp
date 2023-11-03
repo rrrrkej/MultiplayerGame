@@ -12,7 +12,7 @@ AProjectileBullet::AProjectileBullet()
 	ProjectileMovementComponent->bRotationFollowsVelocity = true;
 	ProjectileMovementComponent->SetIsReplicated(true);
 	ProjectileMovementComponent->InitialSpeed = InitialSpeed;
-	ProjectileMovementComponent->MaxSpeed = InitialSpeed;
+	ProjectileMovementComponent->MaxSpeed = InitialSpeed; 
 }
 
 #if WITH_EDITOR

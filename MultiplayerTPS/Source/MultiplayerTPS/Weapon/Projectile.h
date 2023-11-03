@@ -34,6 +34,9 @@ public:
 	UPROPERTY(EditAnywhere)
 	float InitialSpeed = 15000;
 
+	//Apply Damage
+	float Damage = 20.f;
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -54,12 +57,6 @@ protected:
 	UStaticMeshComponent* ProjectileMesh; // 飞行物网格体
 	UPROPERTY(VisibleAnywhere)
 	UProjectileMovementComponent* ProjectileMovementComponent; // 飞行物运动部件
-
-	/**
-	* Apply Damage
-	*/
-	UPROPERTY(EditAnywhere)
-	float Damage = 20.f;
 
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* ImpactParticles; // 命中粒子
