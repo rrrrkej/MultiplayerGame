@@ -453,11 +453,11 @@ void AMP_PlayerController::CheckPing(float DeltaTime)
 	HighPingRunningTime += DeltaTime;
 	if (HighPingRunningTime > CheckPingFrequency)
 	{
-		PlayerState = PlayerState == nullptr ? GetPlayerState<APlayerState>() : PlayerState;
+	/*	PlayerState = PlayerState == nullptr ? GetPlayerState<APlayerState>() : PlayerState;
 		if (!HasAuthority() && GetPawn()->IsLocallyControlled())
 		{
 			DebugHeader::Print(FString::Printf(TEXT("Get Ping(): %f"), PlayerState->GetPingInMilliseconds()), FColor::Blue);
-		}
+		}*/
 		
 		if (PlayerState)
 		{

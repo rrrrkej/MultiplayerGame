@@ -29,21 +29,30 @@ public:
 	void EquipWeapon(AWeapon* WeaponToEquip);
 	void SwapWeapons();
 	void Reload();
-	UFUNCTION(BlueprintCallable)
 
+	// AnimNotify
+	UFUNCTION(BlueprintCallable)
 	void FinishReloading();
 
-	// Shotgun特供装弹函数
+	// AnimNotify : Called on AniMon_Swap
+	UFUNCTION(BlueprintCallable)
+	void SwapAttachedWeapon();
+
+	// AnimNotify : Called on AniMon_Swap
+	UFUNCTION(BlueprintCallable)
+	void FinishSwap();
+
+	// AnimNotify : Shotgun特供装弹函数
 	UFUNCTION(BlueprintCallable)
 	void ShotgunShellReload();
 	//Shotgun结束装弹
 	void JumpToShotgunEnd();
 
-	// ThrowGrenadeFinished AnimNotify
+	// AnimNotify : ThrowGrenadeFinished AnimNotify
 	UFUNCTION(BlueprintCallable)
 	void ThrowGrenadeFinished();
 
-	// GernadeLauncher AnimNotify
+	// AnimNotify : GernadeLauncher AnimNotify
 	UFUNCTION(BlueprintCallable)
 	void LaunchGrenade();
 

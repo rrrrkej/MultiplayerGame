@@ -747,6 +747,15 @@ void AMP_Character::PlayReloadMontage()
 	}
 }
 
+void AMP_Character::PlaySwapMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && SwapMontage)
+	{
+		AnimInstance->Montage_Play(SwapMontage);
+	}
+}
+
 void AMP_Character::PlayHitReactMontage()
 {
 	// Only play when equipped
@@ -809,22 +818,6 @@ void AMP_Character::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 	if (LastWeapon)
 	{
 		LastWeapon->ShowPickupWidget(false);
-	}
-}
-
-void AMP_Character::ServerEquipButtonPressed_Implementation()
-{
-	if (CombatComponent)
-	{
-		if(OverlappingWeapon)
-		{ 
-			CombatComponent->EquipWeapon(OverlappingWeapon);
-		}
-		else if (CombatComponent->ShouldSwapWeapons())
-		{
-			CombatComponent->SwapWeapons();
-		}
-		
 	}
 }
 
@@ -985,12 +978,20 @@ void AMP_Character::JumpPressed(const FInputActionValue& Value)
 	
 }
 
-void AMP_Character::Interaction(const FInputActionValue& Value)
+void AMP_Character::Interaction(const FInputActionValue& Value) // typedef EquipButtonPressed()
 {
 	if (bDisableGameplay) return;
-	if (CombatComponent)
+	if (CombatComponent && CombatComponent->CombatState == ECombatState::ECS_Unoccupied)
 	{
 		ServerEquipButtonPressed();
+		if (CombatComponent->ShouldSwapWeapons() &&
+			!HasAuthority() && 
+			OverlappingWeapon == nullptr)
+		{
+			PlaySwapMontage();
+			CombatComponent->CombatState = ECombatState::ECS_SwappingWeapons;
+			bFinishedSwapping = false;
+		}
 	}
 }
 
@@ -1006,7 +1007,6 @@ void AMP_Character::CrouchPressed(const FInputActionValue& Value)
 	{
 		Super::Crouch();
 	}
-	
 }
 
 void AMP_Character::Aim(const FInputActionValue& Value)
@@ -1071,11 +1071,27 @@ void AMP_Character::ThrowGrenade(const FInputActionValue& Value)
 	}
 }
 
+void AMP_Character::ServerEquipButtonPressed_Implementation()
+{
+	if (CombatComponent)
+	{
+		if (OverlappingWeapon)
+		{
+			CombatComponent->EquipWeapon(OverlappingWeapon);
+		}
+		else if (CombatComponent->ShouldSwapWeapons())
+		{
+			CombatComponent->SwapWeapons();
+		}
+	}
+}
+
 void AMP_Character::EquipPrimaryWeapon(const FInputActionValue& Value)
 {
 	if (CombatComponent && CombatComponent->PrimaryWeaponPtr)
 	{
 		CombatComponent->ServerEquipSpecifiedWeapon_1();
+		PlaySwapMontage();
 	}
 }
 
@@ -1084,6 +1100,7 @@ void AMP_Character::EquipSecondaryWeapon(const FInputActionValue& Value)
 	if (CombatComponent && CombatComponent->SecondaryWeaponPtr)
 	{
 		CombatComponent->ServerEquipSpecifiedWeapon_2();
+		PlaySwapMontage();
 	}
 }
 

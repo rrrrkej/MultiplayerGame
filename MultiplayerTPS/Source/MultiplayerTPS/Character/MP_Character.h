@@ -65,6 +65,9 @@ public:
 	UPROPERTY()
 	TMap<FName, UBoxComponent*> HitCollisionBoxes;
 
+	// Locally anim state
+	bool bFinishedSwapping = true;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -141,6 +144,7 @@ protected:
 	UBoxComponent* foot_r;
 
 	void DisableAllBoxesCollision();
+
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	USpringArmComponent* CameraBoom;
@@ -273,6 +277,9 @@ private:
 	*/
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AWeapon> DefaultWeaponClass;
+
+
+
 #pragma region AnimMontage
 private:
 	UPROPERTY(EditAnywhere, Category = AnimMontage)
@@ -290,10 +297,13 @@ private:
 	UPROPERTY(EditAnywhere, Category = AnimMontage)
 	UAnimMontage* ThrowGrenadeMontage;
 
+	UPROPERTY(EditAnywhere, Category = AnimMontage)
+	UAnimMontage* SwapMontage;
 
 public:
 	void PlayFireMontage(bool bAiming);
 	void PlayReloadMontage();
+	void PlaySwapMontage();
 	void PlayHitReactMontage();
 	void PlayElimMontage();
 	void PlayThrowGrenadeMontage();

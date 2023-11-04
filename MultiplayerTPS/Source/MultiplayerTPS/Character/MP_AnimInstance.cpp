@@ -102,11 +102,12 @@ void UMP_AnimInstance::NativeUpdateAnimation(float DeltaTime)
 	* Update boolean in AnimtionBlueprint
 	* 1.ECombatState:Character state, declare in CombatComponent.h
 	* 2.bDisableGameplay:alter when MatchState change
+	* ÏÐÖÃ×´Ì¬£¬Ö´ÐÐFABRIK, ·ÇÏÐÖÃ×´Ì¬£¬ÒÔ±¾µØ×´Ì¬Îª×¼ÅÐ¶ÏÊÇ·ñFABRIK
 	*/
 	bUseFABRIK = MP_Character->GetCombatState() == ECombatState::ECS_Unoccupied;
 	if (MP_Character->IsLocallyControlled() && MP_Character->GetCombatState() != ECombatState::ECS_Unoccupied)
 	{
-		bUseFABRIK = !MP_Character->IsLocallyReloading();
+		bUseFABRIK = !MP_Character->IsLocallyReloading() && MP_Character->bFinishedSwapping;
 	}
 	bUseAimOffsets = MP_Character->GetCombatState() == ECombatState::ECS_Unoccupied && !MP_Character->GetDisableGameplay();
 	bTransformRightHand = MP_Character->GetCombatState() == ECombatState::ECS_Unoccupied && !MP_Character->GetDisableGameplay();
