@@ -140,13 +140,16 @@ protected:
 	float Damage = 40.f;	// Damage per hit
 
 	// whether use Server-Side Rewind
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(Replicated, EditAnywhere)
 	bool bUseServerSideRewind = false;
 
 	UPROPERTY()
 	AMP_Character* OwnerCharacter;
 	UPROPERTY()
 	AMP_PlayerController* OwnerController;
+
+	UFUNCTION()
+	void OnPingTooHigh(bool bPingTooHigh);
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")

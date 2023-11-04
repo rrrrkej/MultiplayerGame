@@ -90,6 +90,7 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AWeapon, WeaponState);
+	DOREPLIFETIME_CONDITION(AWeapon, bUseServerSideRewind, COND_OwnerOnly);
 }
 
 // Bind delegate with AreaSphere
@@ -166,6 +167,11 @@ void AWeapon::OnWeaponStateSet()
 	}
 }
 
+void AWeapon::OnPingTooHigh(bool bPingTooHigh)
+{
+	bUseServerSideRewind = !bPingTooHigh;
+}
+
 void AWeapon::OnRep_WeaponState()
 {
 	switch (WeaponState)
@@ -204,6 +210,16 @@ void AWeapon::HandleStateInEquipped()
 	}
 	//	¹Ø±ÕÂÖÀª¹â
 	EnableCustomDepth(false);
+	// SSR settings binding delegate
+	OwnerCharacter = OwnerCharacter == nullptr ? Cast<AMP_Character>(GetOwner()) : OwnerCharacter;
+	if (OwnerCharacter && bUseServerSideRewind)
+	{
+		OwnerController = OwnerController == nullptr ? Cast<AMP_PlayerController>(OwnerCharacter->Controller) : OwnerController;
+		if (OwnerController && HasAuthority()/* && !OwnerController->HighPingDelegate.IsBound()*/)
+		{
+			OwnerController->HighPingDelegate.AddDynamic(this, &AWeapon::OnPingTooHigh);
+		}
+	}
 }
 
 void AWeapon::HandleStateInEquippedSecondary()
@@ -224,6 +240,17 @@ void AWeapon::HandleStateInEquippedSecondary()
 	EnableCustomDepth(false);
 	//	GetWeaponMesh()->SetCustomDepthStencilValue(CUSTOM_DEPTH_BLUE);
 	//	GetWeaponMesh()->MarkRenderStateDirty();
+	
+	// SSR settings binding delegate
+	OwnerCharacter = OwnerCharacter == nullptr ? Cast<AMP_Character>(GetOwner()) : OwnerCharacter;
+	if (OwnerCharacter && bUseServerSideRewind)
+	{
+		OwnerController = OwnerController == nullptr ? Cast<AMP_PlayerController>(OwnerCharacter->Controller) : OwnerController;
+		if (OwnerController && HasAuthority() && OwnerController->HighPingDelegate.IsBound())
+		{
+			OwnerController->HighPingDelegate.RemoveDynamic(this, &AWeapon::OnPingTooHigh);
+		}
+	}
 }
 
 void AWeapon::HandleStateInDropped()
@@ -241,6 +268,17 @@ void AWeapon::HandleStateInDropped()
 	WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_BLUE);
 	WeaponMesh->MarkRenderStateDirty();
 	EnableCustomDepth(true);
+
+	// SSR settings binding delegate
+	OwnerCharacter = OwnerCharacter == nullptr ? Cast<AMP_Character>(GetOwner()) : OwnerCharacter;
+	if (OwnerCharacter && bUseServerSideRewind)
+	{
+		OwnerController = OwnerController == nullptr ? Cast<AMP_PlayerController>(OwnerCharacter->Controller) : OwnerController;
+		if (OwnerController && HasAuthority() && OwnerController->HighPingDelegate.IsBound())
+		{
+			OwnerController->HighPingDelegate.RemoveDynamic(this, &AWeapon::OnPingTooHigh);
+		}
+	}
 }
 
 void AWeapon::SpendRound()

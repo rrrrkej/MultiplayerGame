@@ -9,6 +9,7 @@
 #include "MultiplayerTPS/Character/MP_Character.h"
 #include "MultiplayerTPS/PlayerController/MP_PlayerController.h"
 #include "MultiplayerTPS/MP_Components/LagCompensationComponent.h"
+#include "MultiplayerTPS/DebugHeader.h"
 
 AProjectileBullet::AProjectileBullet()
 {
@@ -55,19 +56,19 @@ void AProjectileBullet::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherAc
 
 			AMP_Character* HitCharacter = Cast<AMP_Character>(OtherActor);
 			if (bUseServerSideRewind && OwnerCharacter->GetLagCompensationComponent() && OwnerCharacter->IsLocallyControlled() && HitCharacter)
-			{
+			{	
 				OwnerCharacter->GetLagCompensationComponent()->ProjectileServerScoreRequest(
 					HitCharacter,
 					TraceStart,
 					InitialVelocity,
 					OwnerController->GetServerTime() - OwnerController->SingleTripTime
 				);
-				// Super called Destroy() as end.
-				Super::OnHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit);
-				return;
 			}
 		}
 	}
+	// Super called Destroy() as end.
+	Super::OnHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit);
+	return;
 }
 
 void AProjectileBullet::BeginPlay()

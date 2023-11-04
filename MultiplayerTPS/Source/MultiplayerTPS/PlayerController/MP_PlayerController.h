@@ -6,6 +6,8 @@
 #include "GameFramework/PlayerController.h"
 #include "MP_PlayerController.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHighPingDelegate, bool, bPingTooHigh);
+
 class AMP_HUD;
 class UCharacterOverlay;
 class AMP_GameMode;
@@ -43,6 +45,8 @@ public:
 
 	// half time of RTT
 	float SingleTripTime = 0.f;
+
+	FHighPingDelegate HighPingDelegate;
 
 protected:
 	virtual void BeginPlay() override;
@@ -145,6 +149,10 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	float CheckPingFrequency = 5.f;
+
+	// Check if high Ping, disable Weapon SSR
+	UFUNCTION(Server, Reliable)
+	void ServerReportPintStatus(bool bHighPing);
 
 	UPROPERTY(EditAnywhere)
 	float HighPingThreshold = 50.f;

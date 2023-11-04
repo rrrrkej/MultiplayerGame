@@ -92,7 +92,6 @@ void ULagCompensationComponent::ServerScoreRequest_Implementation(AMP_Character*
 
 void ULagCompensationComponent::ProjectileServerScoreRequest_Implementation(AMP_Character* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, float HitTime)
 {
-	DebugHeader::Print("ProjectileServerScoreRequest_Implementation");
 	FServerSideRewindResult ConfirmResult = ProjectileServerSideRewind(HitCharacter, TraceStart, InitialVelocity, HitTime);
 
 	if (Character && HitCharacter && ConfirmResult.bHitConfimed)

@@ -454,12 +454,22 @@ void AMP_PlayerController::CheckPing(float DeltaTime)
 	if (HighPingRunningTime > CheckPingFrequency)
 	{
 		PlayerState = PlayerState == nullptr ? GetPlayerState<APlayerState>() : PlayerState;
+		if (!HasAuthority() && GetPawn()->IsLocallyControlled())
+		{
+			DebugHeader::Print(FString::Printf(TEXT("Get Ping(): %f"), PlayerState->GetPingInMilliseconds()), FColor::Blue);
+		}
+		
 		if (PlayerState)
 		{
 			if (PlayerState->GetPingInMilliseconds() > HighPingThreshold)
 			{
 				HighPingWarning();
 				PingAnimationRunningTime = 0.f;
+				ServerReportPintStatus(true);
+			}
+			else
+			{
+				ServerReportPintStatus(false);
 			}
 		}
 		HighPingRunningTime = 0.f;
@@ -475,6 +485,11 @@ void AMP_PlayerController::CheckPing(float DeltaTime)
 			StopHighPingWarning();
 		}
 	}
+}
+
+void AMP_PlayerController::ServerReportPintStatus_Implementation(bool bHighPing)
+{
+	HighPingDelegate.Broadcast(bHighPing);
 }
 
 void AMP_PlayerController::OnMatchStateSet(FName State)
