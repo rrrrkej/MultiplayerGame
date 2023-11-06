@@ -4,14 +4,18 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "InputActionValue.h"
 #include "MP_PlayerController.generated.h"
+
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHighPingDelegate, bool, bPingTooHigh);
 
 class AMP_HUD;
 class UCharacterOverlay;
 class AMP_GameMode;
-
+class UInputMappingContext;
+class UInputAction;
+class UUserWidget;
 /**
  * 
  */
@@ -156,4 +160,33 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	float HighPingThreshold = 50.f;
+#pragma region UI
+	/**
+	* Return to main menu
+	*/
+	UPROPERTY(EditAnywhere, Category = HUD)
+	TSubclassOf<UUserWidget> ReturnToMainMenuClass;
+
+	UPROPERTY()
+	class UReturnToMainMenu* ReturnToMainMenu;
+
+	bool bReturnToMainMenuOpen = false;
+#pragma endregion
+#pragma region input
+	/** MappingContext */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputMappingContext* PlayerControllerMapping;
+
+	/* InputAction */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* ReturnMenuAction;
+
+protected:
+	/* Set Mapping context and bind input action*/
+	virtual void SetupInputComponent() override;
+
+	/** Founction Bind to ReturnMenuAction */
+	void ReturnMenu_Pressed(const FInputActionValue& Value);
+
+#pragma endregion
 };

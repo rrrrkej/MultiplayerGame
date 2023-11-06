@@ -8,6 +8,9 @@
 #include "Components/Image.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
+#include "EnhancedPlayerInput.h"
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
 
 #include "MultiplayerTPS/Character/MP_Character.h"
 #include "MultiplayerTPS/UserWidget/MP_HUD.h"
@@ -19,6 +22,7 @@
 #include "MultiplayerTPS/GameState/MP_GameState.h"
 #include "MultiplayerTPS/PlayerState/MP_PlayerState.h"
 #include "MultiplayerTPS/Weapon/Weapon.h"
+#include "MultiplayerTPS/UserWidget/ReturnToMainMenu.h"
 
 void AMP_PlayerController::BeginPlay()
 {
@@ -590,6 +594,44 @@ void AMP_PlayerController::HandleCooldown()
 		if (MP_Character->GetCombatComponent())
 		{
 			MP_Character->GetCombatComponent()->FireButtonpressed(false);
+		}
+	}
+}
+
+
+void AMP_PlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+	if (InputComponent == nullptr) return;
+
+	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
+	if (Subsystem)
+	{
+		Subsystem->AddMappingContext(PlayerControllerMapping, 0);
+	}
+	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(InputComponent))
+	{
+		EnhancedInputComponent->BindAction(ReturnMenuAction, ETriggerEvent::Triggered, this, &AMP_PlayerController::ReturnMenu_Pressed);
+	}
+}
+
+void AMP_PlayerController::ReturnMenu_Pressed(const FInputActionValue& Value)
+{
+	if (ReturnToMainMenuClass == nullptr) return;
+	if (ReturnToMainMenu == nullptr)
+	{
+		ReturnToMainMenu = CreateWidget<UReturnToMainMenu>(this, ReturnToMainMenuClass);
+	}
+	if (ReturnToMainMenu)
+	{
+		bReturnToMainMenuOpen = !bReturnToMainMenuOpen;
+		if (bReturnToMainMenuOpen)
+		{
+			ReturnToMainMenu->MenuSetup();
+		}
+		else
+		{
+			ReturnToMainMenu->MenuTearDown();
 		}
 	}
 }
