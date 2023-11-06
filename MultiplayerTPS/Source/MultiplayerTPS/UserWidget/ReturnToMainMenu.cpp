@@ -7,6 +7,7 @@
 #include "GameFramework/GameModeBase.h"
 
 #include "MultiplayerSessionsSubsystem.h"
+#include "MultiplayerTPS/Character/MP_Character.h"
 
 bool UReturnToMainMenu::Initialize()
 {
@@ -85,7 +86,30 @@ void UReturnToMainMenu::MenuTearDown()
 
 void UReturnToMainMenu::ReturnButtonClicked()
 {
-	ReturnButton->SetIsEnabled(false);
+	ReturnButton->SetIsEnabled(false);	// 禁用按钮，防止重复触发（spam）
+
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		APlayerController* FirstPlayerController = World->GetFirstPlayerController();
+		if (FirstPlayerController)
+		{
+			AMP_Character*  MP_Character = Cast<AMP_Character>(FirstPlayerController->GetPawn());
+			if (MP_Character)
+			{
+				MP_Character->ServerLeaveGame();	// 播放elim动画，处理GameState数据， 最后触发this->OnPlayerLeftGame()
+				MP_Character->OnLeftGame.AddDynamic(this, &UReturnToMainMenu::OnPlayerLeftGame);
+			}
+			else
+			{
+				ReturnButton->SetIsEnabled(true);
+			}
+		}
+	}
+}
+
+void UReturnToMainMenu::OnPlayerLeftGame()
+{
 	if (MultiplayerSessionsSubsystem)
 	{
 		MultiplayerSessionsSubsystem->DestroySession();
@@ -118,3 +142,4 @@ void UReturnToMainMenu::OnDestroySession(bool bWasSuccessful)
 		}
 	}
 }
+

@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ // Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -29,11 +29,17 @@ protected:
 
 	UFUNCTION()
 	void OnDestroySession(bool bWasSuccessful);
+	
+	// Bind delegate with AMP_Character::OnLeftGame
+	UFUNCTION()
+	void OnPlayerLeftGame();
+
 private:
 
 	UPROPERTY(meta = (BindWidget))
 	UButton* ReturnButton;
 
+	// 退出游戏按钮按下触发事件
 	UFUNCTION()
 	void ReturnButtonClicked();
 

@@ -11,6 +11,8 @@
 #include "MultiplayerTPS/Types/CombatState.h"
 #include "MP_Character.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLeftGame);
+
 class USpringArmComponent;
 class UCameraComponent;
 class UWidgetComponent;
@@ -24,6 +26,7 @@ class AMP_PlayerState;
 class UBuffComponent;
 class UBoxComponent;
 class ULagCompensationComponent;
+class AMP_GameMode;
 
 UCLASS()
 class MULTIPLAYERTPS_API AMP_Character : public ACharacter, public IInteractWithCrosshairsInterface
@@ -42,9 +45,9 @@ public:
 	virtual void OnRep_ReplicatedMovement() override;
 
 	// Handle what happens when the player gets eliminated
-	void Elim();
+	void Elim(bool bPlayerLeftGame);
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastElim();
+	void MulticastElim(bool bPlayerLeftGame);
 	virtual void Destroyed() override;
 
 	//	true when character state be uncontrollable
@@ -67,6 +70,16 @@ public:
 
 	// Locally anim state
 	bool bFinishedSwapping = true;
+
+	/**
+	* Quit session
+	*/
+	bool bLeftGame = false;
+
+	FOnLeftGame OnLeftGame;
+
+	UFUNCTION(Server, Reliable)
+	void ServerLeaveGame();
 
 protected:
 	// Called when the game starts or when spawned
@@ -214,13 +227,18 @@ private:
 	UFUNCTION()
 	void OnRep_Shield(float LastShield);
 
+	UPROPERTY()
 	AMP_PlayerController* MP_PlayerController;
-
-	bool bElimmed = false; // true when Elimmed
+	UPROPERTY()
+	AMP_GameMode* MP_GameMode;
+	UPROPERTY()
+	AMP_PlayerState* MP_PlayerState;
 
 	/**
-	* Timerhandle of RespawnCharacter
+	* Related to elim
 	*/
+	bool bElimmed = false; // true when Elimmed
+
 	FTimerHandle ElimTimer;
 
 	UPROPERTY(EditDefaultsOnly)
@@ -262,8 +280,6 @@ private:
 	UPROPERTY(EditAnywhere)
 	USoundCue* ElimBotSound;
 
-	UPROPERTY()
-	AMP_PlayerState* MP_PlayerState;
 
 	/**
 	* Grenade
@@ -277,8 +293,6 @@ private:
 	*/
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AWeapon> DefaultWeaponClass;
-
-
 
 #pragma region AnimMontage
 private:
@@ -424,3 +438,4 @@ public:
 	bool IsLocallyReloading();
 	FORCEINLINE ULagCompensationComponent* GetLagCompensationComponent() { return LagCompensationComponent; } // return LagCompensation
 };
+

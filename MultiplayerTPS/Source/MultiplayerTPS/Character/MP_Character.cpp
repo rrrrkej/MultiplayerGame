@@ -226,7 +226,7 @@ void AMP_Character::OnRep_ReplicatedMovement()
 	TimeSinceLastMovementReplication = 0.f;
 }
 
-void AMP_Character::Elim()
+void AMP_Character::Elim(bool bPlayerLeftGame)
 {
 	if (CombatComponent)
 	{
@@ -236,13 +236,99 @@ void AMP_Character::Elim()
 			HandleWeaponWhenElimed(CombatComponent->SecondaryWeapon);
 	}
 
-	MulticastElim();
-	GetWorldTimerManager().SetTimer(
-		ElimTimer, 
-		this, 
-		&AMP_Character::ElimTimerFinished, 
-		ElimDelay
+	MulticastElim(bPlayerLeftGame);
+}
+
+
+void AMP_Character::MulticastElim_Implementation(bool bPlayerLeftGame)
+{
+	bLeftGame = bPlayerLeftGame;
+	if (MP_PlayerController)
+	{
+		MP_PlayerController->SetHUDWeaponAmmo(0);
+	}
+	bElimmed = true;
+	PlayElimMontage();
+
+	// Start dissolve effect
+	if (DissolveMaterialInstance)
+	{
+		DynamicDissolveMaterialInstance = UMaterialInstanceDynamic::Create(DissolveMaterialInstance, this);
+
+		GetMesh()->SetMaterial(0, DynamicDissolveMaterialInstance);
+		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Dissolve"), 0.55f);
+		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Glow"), 100.f);
+	}
+	StartDissolve();
+
+	// Disable character movement
+	GetCharacterMovement()->DisableMovement();
+	GetCharacterMovement()->StopMovementImmediately();
+	bDisableGameplay = true;
+	if (CombatComponent)
+	{
+		CombatComponent->FireButtonpressed(false);
+	}
+	// Disable collision
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	// Spawn ElimBot component
+	if (ElimBotEffect)
+	{
+		FVector ElimBotSpawnPoint(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z + 200.f);
+		ElimBotComponent =
+			UGameplayStatics::SpawnEmitterAtLocation(
+				GetWorld(),
+				ElimBotEffect,
+				ElimBotSpawnPoint,
+				GetActorRotation()
+			);
+	}
+
+	if (ElimBotSound)
+	{
+		UGameplayStatics::SpawnSoundAtLocation(
+			this,
+			ElimBotSound,
+			GetActorLocation()
 		);
+	}
+
+	if (IsLocallyControlled() &&
+		CombatComponent &&
+		CombatComponent->EquippedWeapon &&
+		CombatComponent->EquippedWeapon->GetWeaponType() == EWeaponType::EWT_SniperRifle)
+	{
+
+		CombatComponent->EquippedWeapon->ShowScopeWidget(false);
+	}
+
+	GetWorldTimerManager().SetTimer(
+		ElimTimer,
+		this,
+		&AMP_Character::ElimTimerFinished,
+		ElimDelay
+	);
+}
+
+void AMP_Character::ElimTimerFinished()
+{
+	MP_GameMode = MP_GameMode == nullptr ? GetWorld()->GetAuthGameMode<AMP_GameMode>() : MP_GameMode;
+	if (MP_GameMode && !bLeftGame)
+	{
+		MP_GameMode->RequestRespawn(this, Controller);
+	}
+
+	if (bLeftGame && IsLocallyControlled()) // if leave game ,broadcast
+	{
+		OnLeftGame.Broadcast();
+	}
+
+	if (ElimBotComponent)
+	{
+		ElimBotComponent->DestroyComponent();
+	}
 }
 
 void AMP_Character::HandleWeaponWhenElimed(AWeapon* Weapon)
@@ -276,80 +362,13 @@ void AMP_Character::Destroyed()
 	}
 }
 
-void AMP_Character::MulticastElim_Implementation()
+void AMP_Character::ServerLeaveGame_Implementation()
 {
-	if (MP_PlayerController)
+	MP_GameMode = MP_GameMode == nullptr ? GetWorld()->GetAuthGameMode<AMP_GameMode>() : MP_GameMode;
+	MP_PlayerState = MP_PlayerState == nullptr ? GetPlayerState<AMP_PlayerState>() : MP_PlayerState;
+	if (MP_GameMode && MP_PlayerState)
 	{
-		MP_PlayerController->SetHUDWeaponAmmo(0);
-	}
-	bElimmed = true;
-	PlayElimMontage();
-
-	// Start dissolve effect
-	if(DissolveMaterialInstance)
-	{
-		DynamicDissolveMaterialInstance = UMaterialInstanceDynamic::Create(DissolveMaterialInstance, this);
-
-		GetMesh()->SetMaterial(0, DynamicDissolveMaterialInstance);
-		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Dissolve"), 0.55f);
-		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Glow"), 100.f);
-	}
-	StartDissolve();
-
-	// Disable character movement
-	GetCharacterMovement()->DisableMovement();
-	GetCharacterMovement()->StopMovementImmediately();
-	bDisableGameplay = true;
-	if (CombatComponent)
-	{
-		CombatComponent->FireButtonpressed(false);
-	}
-	// Disable collision
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
-	// Spawn ElimBot component
-	if (ElimBotEffect)
-	{
-		FVector ElimBotSpawnPoint(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z + 200.f);
-		ElimBotComponent = 
-		UGameplayStatics::SpawnEmitterAtLocation(
-			GetWorld(),
-			ElimBotEffect,
-			ElimBotSpawnPoint,
-			GetActorRotation()
-		);
-	}
-
-	if (ElimBotSound)
-	{
-		UGameplayStatics::SpawnSoundAtLocation(
-			this,
-			ElimBotSound,
-			GetActorLocation()
-			);
-	}
-
-	if (IsLocallyControlled() && 
-		CombatComponent && 
-		CombatComponent->EquippedWeapon && 
-		CombatComponent->EquippedWeapon->GetWeaponType() == EWeaponType::EWT_SniperRifle)
-	{
-
-		CombatComponent->EquippedWeapon->ShowScopeWidget(false);
-	}
-}
-
-void AMP_Character::ElimTimerFinished()
-{
-	AMP_GameMode* MP_GameMode = GetWorld()->GetAuthGameMode<AMP_GameMode>();
-	if (MP_GameMode)
-	{
-		MP_GameMode->RequestRespawn(this, Controller);
-	}
-	if (ElimBotComponent)
-	{
-		ElimBotComponent->DestroyComponent();
+		MP_GameMode->PlayerLeftGame(MP_PlayerState);
 	}
 }
 
@@ -383,7 +402,6 @@ void AMP_Character::Tick(float DeltaTime)
 
 void AMP_Character::PollInit()
 {
-
 	if (MP_PlayerState == nullptr)
 	{	
 		MP_PlayerState = GetPlayerState<AMP_PlayerState>();
@@ -633,7 +651,7 @@ void AMP_Character::ReceiveDamage(AActor* DamagedActor, float Damage, const UDam
 
 	if (Health == 0.f)
 	{
-		AMP_GameMode* MP_GameMode = GetWorld()->GetAuthGameMode<AMP_GameMode>();
+		MP_GameMode = MP_GameMode == nullptr ?  GetWorld()->GetAuthGameMode<AMP_GameMode>() : MP_GameMode;
 		if (MP_GameMode)
 		{
 			MP_PlayerController = MP_PlayerController == nullptr ? Cast<AMP_PlayerController>(Controller) : MP_PlayerController;
@@ -854,7 +872,7 @@ FVector AMP_Character::GetHitTarget() const
 
 void AMP_Character::SpawnDefaultWeapon()
 {
-	AMP_GameMode* MP_GameMode = Cast<AMP_GameMode>(UGameplayStatics::GetGameMode(this));
+	MP_GameMode = MP_GameMode == nullptr ? Cast<AMP_GameMode>(UGameplayStatics::GetGameMode(this)) : MP_GameMode;
 	UWorld* World = GetWorld();
 	if (MP_GameMode && World && !bElimmed && DefaultWeaponClass)
 	{

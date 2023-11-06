@@ -31,6 +31,9 @@ public:
 	// Called when ElimTimer finished
 	virtual void RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController);
 
+	// Called by AMP_Character::ServerLeaveGame, Quit game
+	void PlayerLeftGame(class AMP_PlayerState* PlayerLeaving);
+
 	UPROPERTY(EditDefaultsOnly)
 	float WarmupTime = 10.f;
 

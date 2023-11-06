@@ -98,7 +98,7 @@ void AMP_GameMode::PlayerEliminated(AMP_Character* ElimmedCharacter, AMP_PlayerC
 	// Elim victim character
 	if (ElimmedCharacter)
 	{
-		ElimmedCharacter->Elim();
+		ElimmedCharacter->Elim(false);
 	}
 }
 
@@ -116,6 +116,25 @@ void AMP_GameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* Eli
 		UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), PlayerStarts);
 		int32 Selection = FMath::RandRange(0, PlayerStarts.Num() - 1);
 		RestartPlayerAtPlayerStart(ElimmedController, PlayerStarts[Selection]);
+	}
+}
+
+void AMP_GameMode::PlayerLeftGame(AMP_PlayerState* PlayerLeaving)
+{
+	if (PlayerLeaving == nullptr) return;
+
+	//	delete PlayerLeaving if on point rank 
+	AMP_GameState* MP_GameState = GetGameState<AMP_GameState>();
+	if (MP_GameState && MP_GameState->TopScoringPlayers.Contains(PlayerLeaving))
+	{
+		MP_GameState->TopScoringPlayers.Remove(PlayerLeaving);
+	}
+
+	//
+	AMP_Character* CharacterLeaving = Cast<AMP_Character>(PlayerLeaving->GetPawn());
+	if (CharacterLeaving)
+	{
+		CharacterLeaving->Elim(true);
 	}
 }
 
