@@ -17,6 +17,8 @@
 #include "particles/ParticleSystemComponent.h"
 #include "Components/ProgressBar.h"
 #include "Components/BoxComponent.h"
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 
 #include "MultiplayerTPS/PlayerState/MP_PlayerState.h"
 #include "MultiplayerTPS/Weapon/WeaponTypes.h"
@@ -29,6 +31,7 @@
 #include "MultiplayerTPS/GameMode/MP_GameMode.h"
 #include "MultiplayerTPS/UserWidget/OverheadWidget.h"
 #include "MultiplayerTPS/MP_Components/LagCompensationComponent.h"
+#include "MultiplayerTPS/GameState/MP_GameState.h"
 #include "../DebugHeader.h"
 
 AMP_Character::AMP_Character()
@@ -285,7 +288,6 @@ void AMP_Character::MulticastElim_Implementation(bool bPlayerLeftGame)
 				GetActorRotation()
 			);
 	}
-
 	if (ElimBotSound)
 	{
 		UGameplayStatics::SpawnSoundAtLocation(
@@ -295,6 +297,7 @@ void AMP_Character::MulticastElim_Implementation(bool bPlayerLeftGame)
 		);
 	}
 
+	// Turn off the weapon widget
 	if (IsLocallyControlled() &&
 		CombatComponent &&
 		CombatComponent->EquippedWeapon &&
@@ -304,12 +307,19 @@ void AMP_Character::MulticastElim_Implementation(bool bPlayerLeftGame)
 		CombatComponent->EquippedWeapon->ShowScopeWidget(false);
 	}
 
+	// Set timer
 	GetWorldTimerManager().SetTimer(
 		ElimTimer,
 		this,
 		&AMP_Character::ElimTimerFinished,
 		ElimDelay
 	);
+
+	// Destroy the component if it exists
+	if (CrownComponent)
+	{
+		CrownComponent->DestroyComponent();
+	}
 }
 
 void AMP_Character::ElimTimerFinished()
@@ -409,6 +419,12 @@ void AMP_Character::PollInit()
 		{
 			MP_PlayerState->AddToScore(0.f);
 			MP_PlayerState->AddToDefeats(0);
+
+			AMP_GameState* MP_GameState = Cast<AMP_GameState>(UGameplayStatics::GetGameState(this));
+			if (MP_GameState && MP_GameState->TopScoringPlayers.Contains(MP_PlayerState))
+			{
+				MulticastGainedTheLead();
+			}
 		}
 	}
 }
@@ -445,6 +461,36 @@ void AMP_Character::SetOverheadHealth()
 	{
 		const float HealthPercent = Health / MaxHealth;
 		OverheadWidget->HealthBar->SetPercent(HealthPercent);
+	}
+}
+
+void AMP_Character::MulticastGainedTheLead_Implementation()
+{
+	if (CrownSystem == nullptr) return;
+	if (CrownComponent == nullptr)
+	{
+		// Spawn crown at head of character
+		CrownComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+			CrownSystem,
+			GetCapsuleComponent(),
+			FName(),
+			GetActorLocation() + FVector(0.f, 0.f, 110.f),
+			GetActorRotation(),
+			EAttachLocation::KeepWorldPosition,
+			false
+		);
+	}
+	if (CrownComponent)
+	{
+		CrownComponent->Activate();
+	}
+}
+
+void AMP_Character::MulticastLostTheLead_Implementation()
+{
+	if (CrownComponent)
+	{
+		CrownComponent->DestroyComponent();
 	}
 }
 

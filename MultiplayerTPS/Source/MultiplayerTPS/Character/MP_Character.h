@@ -27,6 +27,8 @@ class UBuffComponent;
 class UBoxComponent;
 class ULagCompensationComponent;
 class AMP_GameMode;
+class UNiagaraSystem;
+class UNiagaraComponent;
 
 UCLASS()
 class MULTIPLAYERTPS_API AMP_Character : public ACharacter, public IInteractWithCrosshairsInterface
@@ -80,6 +82,14 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void ServerLeaveGame();
+
+	/* Spawn Crown NiagaraSystem*/
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastGainedTheLead();
+
+	/* Destroy Crown NiagaraSystem*/
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastLostTheLead();
 
 protected:
 	// Called when the game starts or when spawned
@@ -235,7 +245,7 @@ private:
 	AMP_PlayerState* MP_PlayerState;
 
 	/**
-	* Related to elim
+	* ElimTimer
 	*/
 	bool bElimmed = false; // true when Elimmed
 
@@ -280,6 +290,15 @@ private:
 	UPROPERTY(EditAnywhere)
 	USoundCue* ElimBotSound;
 
+	/*
+	* lead crown
+	*/
+
+	UPROPERTY(EditAnywhere)
+	UNiagaraSystem* CrownSystem;
+
+	UPROPERTY()
+	UNiagaraComponent* CrownComponent;
 
 	/**
 	* Grenade

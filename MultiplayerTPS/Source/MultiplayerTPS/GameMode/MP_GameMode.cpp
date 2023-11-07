@@ -81,12 +81,36 @@ void AMP_GameMode::PlayerEliminated(AMP_Character* ElimmedCharacter, AMP_PlayerC
 	AMP_GameState* MP_GameState = GetGameState<AMP_GameState>();
 
 	// Update AttackerPlayerState
-	if(AttackerPlayerState && AttackerPlayerState != VictimPlayerState)
+	if(AttackerPlayerState && AttackerPlayerState != VictimPlayerState && MP_GameState)
 	{
-		AttackerPlayerState->AddToScore(1.f);
-		if (MP_GameState)
+		// save current leader
+		TArray<AMP_PlayerState*> PlayersCurrentlyInTheLead;
+		for (auto LeadPlayer : MP_GameState->TopScoringPlayers)
 		{
-			MP_GameState->UpdateTopScore(AttackerPlayerState);
+			PlayersCurrentlyInTheLead.Add(LeadPlayer);
+		}
+		// score calculation
+		AttackerPlayerState->AddToScore(1.f);
+		MP_GameState->UpdateTopScore(AttackerPlayerState);
+		if (MP_GameState->TopScoringPlayers.Contains(AttackerPlayerState)) // Niagara for Leader
+		{
+			AMP_Character* Leader = Cast<AMP_Character>(AttackerPlayerState->GetPawn());
+			if (Leader)
+			{
+				Leader->MulticastGainedTheLead();
+			}
+		}
+		// Deactive Niagara for Loser
+		for (AMP_PlayerState* Player : PlayersCurrentlyInTheLead)
+		{
+			if (!MP_GameState->TopScoringPlayers.Contains(Player))
+			{
+				AMP_Character* Loser = Cast<AMP_Character>(Player->GetPawn());
+				if (Loser)
+				{
+					Loser->MulticastLostTheLead();
+				}
+			}
 		}
 	}
 	// Update VictimPlayerState

@@ -100,7 +100,7 @@ void UReturnToMainMenu::ReturnButtonClicked()
 				MP_Character->ServerLeaveGame();	// 播放elim动画，处理GameState数据， 最后触发this->OnPlayerLeftGame()
 				MP_Character->OnLeftGame.AddDynamic(this, &UReturnToMainMenu::OnPlayerLeftGame);
 			}
-			else
+			else // 如果角色处于重生状态则重置按钮等待重生
 			{
 				ReturnButton->SetIsEnabled(true);
 			}
