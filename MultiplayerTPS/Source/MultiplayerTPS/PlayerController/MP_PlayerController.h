@@ -52,6 +52,15 @@ public:
 
 	FHighPingDelegate HighPingDelegate;
 
+	/*
+	* Broadcast announcement when elimed
+	*/
+	void BroadcastElim(APlayerState* Attacker, APlayerState* Victim);
+protected: 
+	// 实际输出的内容，根据角色相对关系进行调整
+	UFUNCTION(Client, Reliable)
+	void ClientElimAnnouncement(APlayerState* Attacker, APlayerState* Victim);
+
 protected:
 	virtual void BeginPlay() override;
 	void SetHUDTime();

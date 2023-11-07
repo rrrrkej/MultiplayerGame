@@ -26,7 +26,7 @@ public:
 	AMP_GameMode();
 
 	virtual void Tick(float DeltaTime) override;
-	// Called when Character's HP down to zero
+	// Called at MP_Character::ReceiveDamage()
 	virtual void PlayerEliminated(AMP_Character* ElimmedCharacter, AMP_PlayerController* VictimController, AMP_PlayerController* AttackerController);
 	// Called when ElimTimer finished
 	virtual void RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController);

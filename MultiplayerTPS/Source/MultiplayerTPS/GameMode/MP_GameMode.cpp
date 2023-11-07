@@ -124,6 +124,16 @@ void AMP_GameMode::PlayerEliminated(AMP_Character* ElimmedCharacter, AMP_PlayerC
 	{
 		ElimmedCharacter->Elim(false);
 	}
+
+	// Broadcast elim announcement
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		AMP_PlayerController* MP_Player = Cast<AMP_PlayerController>(*It);
+		if (MP_Player && AttackerPlayerState && VictimPlayerState)
+		{
+			MP_Player->BroadcastElim(AttackerPlayerState, VictimPlayerState);
+		}
+	}
 }
 
 void AMP_GameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController)
