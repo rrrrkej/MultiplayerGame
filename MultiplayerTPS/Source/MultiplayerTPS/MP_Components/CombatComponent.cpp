@@ -309,7 +309,8 @@ void UCombatComponent::FireShotgun()
 	{
 		TArray<FVector_NetQuantize> HitTargets;
 		Shotgun->ShotgunTraceEndWithScatter(HitTarget, HitTargets);
-		if (!Character->HasAuthority()) LocalShotgunFire(HitTargets);
+		if (!Character->HasAuthority())
+			LocalShotgunFire(HitTargets);
 		ServerShotgunFire(HitTargets, EquippedWeapon->FireDelay);
 	}
 }
@@ -425,6 +426,7 @@ void UCombatComponent::LocalShotgunFire(const TArray<FVector_NetQuantize>& Trace
 	// Shotgun 单发装填开火
 	if (CombatState == ECombatState::ECS_Reloading || CombatState == ECombatState::ECS_Unoccupied)
 	{
+		bLocallyReloading = false;
 		Character->PlayFireMontage(bAiming);
 		Shotgun->FireShotgun(TraceHitTargets);
 		CombatState = ECombatState::ECS_Unoccupied;

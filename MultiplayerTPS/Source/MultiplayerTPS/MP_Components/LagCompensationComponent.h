@@ -106,8 +106,7 @@ public:
 		AMP_Character* HitCharacter,
 		const FVector_NetQuantize& TraceStart,
 		const FVector_NetQuantize& HitLocations,
-		float HitTime,
-		AWeapon* Weapon
+		float HitTime
 	);
 	
 	//ServerRPC :

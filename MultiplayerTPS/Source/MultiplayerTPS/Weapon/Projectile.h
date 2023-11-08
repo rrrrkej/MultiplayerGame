@@ -34,8 +34,15 @@ public:
 	UPROPERTY(EditAnywhere)
 	float InitialSpeed = 15000;
 
-	//Apply Damage
+	/*
+	* Damage amount is construct with weapon damage except grenade and rocket
+	*/
+	UPROPERTY(EditAnywhere)
 	float Damage = 20.f;
+
+	// does't matter with grenade and rocket
+	UPROPERTY(EditAnywhere)
+	float HeadShotDamage = 40.f;
 
 protected:
 	virtual void BeginPlay() override;
