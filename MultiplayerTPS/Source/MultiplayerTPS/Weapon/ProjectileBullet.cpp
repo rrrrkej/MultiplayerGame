@@ -25,7 +25,7 @@ void AProjectileBullet::PostEditChangeProperty(FPropertyChangedEvent& Event)
 {
 	Super::PostEditChangeProperty(Event);
 
-	//FName PropertyName = Event.Property != nullptr ? Event.Property->GetFName() : NAME_None;
+	// FName PropertyName = Event.Property != nullptr ? Event.Property->GetFName() : NAME_None;
 	if (Event.GetPropertyName() == GET_MEMBER_NAME_CHECKED(AProjectileBullet, InitialSpeed))
 	{
 		if (ProjectileMovementComponent)
@@ -34,7 +34,6 @@ void AProjectileBullet::PostEditChangeProperty(FPropertyChangedEvent& Event)
 			ProjectileMovementComponent->MaxSpeed = InitialSpeed;
 		}
 	}
-
 }
 #endif
 

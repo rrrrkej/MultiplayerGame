@@ -29,7 +29,8 @@ void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& HitTargets)
 	const FVector Start = SocketTransform.GetLocation();
 
 	// Maps hit chracter to number of times hit
-	TMap<AMP_Character*, uint32> HitMap;	
+	TMap<AMP_Character*, uint32> HitMap;
+	TMap<AMP_Character*, uint32> HeadShotHitMap;
 	for (const FVector_NetQuantize& HitTarget : HitTargets)
 	{
 		FHitResult FireHit;
@@ -38,14 +39,19 @@ void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& HitTargets)
 		AMP_Character* MP_Character = Cast<AMP_Character>(FireHit.GetActor());
 		if (MP_Character)
 		{
-			if (HitMap.Contains(MP_Character))
+			const bool bHeadShot = FireHit.BoneName.ToString() == FString("head");
+
+			if (bHeadShot)
 			{
-				HitMap[MP_Character]++;
+				if (HeadShotHitMap.Contains(MP_Character))	HeadShotHitMap[MP_Character]++;
+				else   HeadShotHitMap.Emplace(MP_Character, 1);
 			}
 			else
 			{
-				HitMap.Emplace(MP_Character, 1);
+				if (HitMap.Contains(MP_Character))	HitMap[MP_Character]++;
+				else   HitMap.Emplace(MP_Character, 1);
 			}
+		
 			//	Spawn impact ParticleSystem
 			if (ImpactParticles)
 			{
@@ -69,26 +75,46 @@ void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& HitTargets)
 			}
 		}
 	}
-	TArray<AMP_Character*> HitCharacters;
+	TArray<AMP_Character*> HitCharacters;	// Array to HitCharacters
+	TMap<AMP_Character*, float> DamageMap;	// Maps Character to total damage
+	// Body hit damage
 	for (auto HitPair : HitMap)
 	{
-		// Apply damage in server
-		if (HitPair.Key && InstigatorController)
+		if (HitPair.Key)
+		{
+			DamageMap.Emplace(HitPair.Key, HitPair.Value * Damage);
+			HitCharacters.AddUnique(HitPair.Key);
+		}
+	}
+	// Head hit damage
+	for (auto HitPair : HeadShotHitMap)
+	{
+		if (HitPair.Key)
+		{
+			if (DamageMap.Contains(HitPair.Key)) DamageMap[HitPair.Key] += HeadShotDamage * HitPair.Value;
+			else DamageMap.Emplace(HitPair.Key, HitPair.Value * HeadShotDamage);
+			HitCharacters.AddUnique(HitPair.Key);
+		}
+	}
+	// Loop through DamageMap to get total damage for each character
+	for (TPair<AMP_Character*, float>  DamagePair : DamageMap)
+	{
+		if (DamagePair.Key && InstigatorController)
 		{
 			bool bCauseAuthDamage = !bUseServerSideRewind || OwnerPawn->IsLocallyControlled();
 			if (HasAuthority() && bCauseAuthDamage)
 			{
 				UGameplayStatics::ApplyDamage(
-					HitPair.Key,	//	Character be hitted
-					Damage * HitPair.Value,	//	Multiplay Damage by number of times hit
+					DamagePair.Key,	//	Character be hitted
+					DamagePair.Value,	//	total damage
 					InstigatorController,
 					this,
 					UDamageType::StaticClass()
 				);
 			}
-			HitCharacters.Add(HitPair.Key);
 		}
 	}
+	
 
 	//	Apply damage with LagCompensation
 	if (!HasAuthority() && bUseServerSideRewind)
