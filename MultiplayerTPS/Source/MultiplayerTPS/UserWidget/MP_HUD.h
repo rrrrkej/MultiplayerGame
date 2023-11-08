@@ -58,8 +58,7 @@ public:
 
 	// Add Announcement userwidget to viewport
 	void AddAnnouncement();
-	// Add ElimAnnouncement userwidget to viewport
-	void AddElimAnnouncement(FString Attacker, FString Victim);
+	
 
 protected:
 	virtual void BeginPlay() override;
@@ -75,8 +74,26 @@ private:
 	UPROPERTY(EditAnywhere)
 	float CrosshairSpreadMax = 16.f;
 	
+	/**
+	* ElimAnnouncement
+	*/
+private:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UElimAnnouncement> ElimAnnouncementClass;
+
+	// Elim announcement duration
+	UPROPERTY()
+	float ElimAnnouncementTime = 3.f;
+
+	UFUNCTION()
+	void ElimAnnouncementTimerFinished(UElimAnnouncement* WidgetToRemove);
+
+	UPROPERTY()
+	TArray<UElimAnnouncement*> ElimWidgets;
+
+public:
+	// Add ElimAnnouncement userwidget to viewport
+	void AddElimAnnouncement(FString Attacker, FString Victim);
 
 public:
 	FORCEINLINE void SetCrosshairPackage(const FCrosshairPackage& Package) { CrosshairPackage = Package; }

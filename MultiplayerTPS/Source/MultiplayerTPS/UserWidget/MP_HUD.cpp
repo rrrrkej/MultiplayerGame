@@ -5,6 +5,9 @@
 #include "GameFramework/PlayerController.h"
 #include "CharacterOverlay.h"
 #include "Announcement.h"
+#include "Blueprint/WidgetLayoutLibrary.h"
+#include "Components/HorizontalBox.h"
+#include "Components/CanvasPanelSlot.h"
 
 #include "ElimAnnouncement.h"
 #include "MultiplayerTPS/DebugHeader.h"
@@ -46,7 +49,42 @@ void AMP_HUD::AddElimAnnouncement(FString Attacker, FString Victim)
 		{
 			ElimAnnouncementWidget->SetElimAnnouncementText(Attacker, Victim);
 			ElimAnnouncementWidget->AddToViewport();
+
+			for (UElimAnnouncement* ElimWidget : ElimWidgets)
+			{
+				if (ElimWidget && ElimWidget->AnnouncementBox)
+				{
+					// 获得AnnoucnementBox在CanvasPannel上的位置等属性
+					UCanvasPanelSlot* CanvasSlot = UWidgetLayoutLibrary::SlotAsCanvasSlot(ElimWidget->AnnouncementBox);
+					if (CanvasSlot)
+					{
+						FVector2D Position = CanvasSlot->GetPosition();
+						FVector2D NewPosition(CanvasSlot->GetPosition().X, Position.Y - CanvasSlot->GetSize().Y);
+						CanvasSlot->SetPosition(NewPosition);
+					}
+				}
+			}
+			ElimWidgets.Add(ElimAnnouncementWidget);
 		}
+
+		FTimerHandle ElimWidgetTimer;
+		FTimerDelegate ElimWidgetDelegate;
+		ElimWidgetDelegate.BindUFunction(this, FName("ElimAnnouncementTimerFinished"), ElimAnnouncementWidget);
+		// SetTimer不能接受给绑定的函数传入参数，所以这里另外绑定委托函数并传入参数，再设置Timer控制触发时间
+		GetWorldTimerManager().SetTimer(
+			ElimWidgetTimer,
+			ElimWidgetDelegate,
+			ElimAnnouncementTime,
+			false
+		);
+	}
+}
+
+void AMP_HUD::ElimAnnouncementTimerFinished(UElimAnnouncement* WidgetToRemove)
+{
+	if (WidgetToRemove)
+	{
+		WidgetToRemove->RemoveFromParent();
 	}
 }
 
