@@ -234,7 +234,7 @@ void UCombatComponent::SetAiming(bool bIsAiming)
 	}
 	if (Character->IsLocallyControlled() && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_SniperRifle)
 	{
-		Cast<AWeapon>(EquippedWeapon)->ShowScopeWidget(bIsAiming);
+		EquippedWeapon->ShowScopeWidget(bIsAiming);
 	}
 }
 
@@ -676,6 +676,13 @@ void UCombatComponent::SwapAttachedWeapon()
 {
 	if (Character && !Character->HasAuthority()) return;
 
+	// 解决狙击枪按住切换武器时的瞄准问题
+	if (EquippedWeapon->GetWeaponType() == EWeaponType::EWT_SniperRifle)
+	{
+		EquippedWeapon->ShowScopeWidget(false);
+	}
+	
+	// Swap Weapon
 	AWeapon* TempWeapon = EquippedWeapon;
 	EquippedWeapon = SecondaryWeapon;
 	SecondaryWeapon = TempWeapon;

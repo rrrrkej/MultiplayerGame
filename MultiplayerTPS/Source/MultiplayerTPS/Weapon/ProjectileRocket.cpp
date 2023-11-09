@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "ProjectileRocket.h"
@@ -9,6 +9,11 @@
 #include "NiagaraComponent.h"
 #include "Components/AudioComponent.h"
 #include "RocketMovementComponent.h"
+#include "Kismet/KismetSystemLibrary.h"
+
+#include "MultiplayerTPS/PlayerController/MP_PlayerController.h"
+#include "MultiplayerTPS/Character/MP_Character.h"
+#include "MultiplayerTPS/DebugHeader.h"
 
 AProjectileRocket::AProjectileRocket()
 {
@@ -30,7 +35,7 @@ void AProjectileRocket::BeginPlay()
 		CollisionBox->OnComponentHit.AddDynamic(this, &AProjectileRocket::OnHit);
 	}
 
-	// ���ɻ�����ĵ�������
+	// 生成火箭弹的弹道粒子
 	SpawnTrailSystem();
 
 	if (ProjectileLoop && LoopingSoundAttenuation)
@@ -58,9 +63,51 @@ void AProjectileRocket::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 
 	{
 		return;
 	}
+	AMP_Character* OwnerCharacter = Cast<AMP_Character>(GetOwner());
+	AMP_PlayerController* OwnerController = Cast<AMP_PlayerController>(OwnerCharacter->Controller);
 
-	ExplodeDamage();
+	if(OwnerController && OwnerCharacter)
+	{
+		if (!bUseServerSideRewind)
+		{ 
+			if (OwnerCharacter->HasAuthority())  // 不使用SSR或者服务器本机则直接服务端计算伤害
+			{
+				ExplodeDamage();
+			}
+		}
+		else if(bUseServerSideRewind && OwnerController->IsLocalController()) // 使用SSR请求，以本地为主。
+		{
+			if (OwnerCharacter->HasAuthority())	// 服务器不使用SSR
+			{
+				ExplodeDamage();
+			}
+			else //	客户端本地执行ssr
+			{
+				FString str = TEXT("客户端使用SSR");
+				GEngine->AddOnScreenDebugMessage(-1, 3, FColor::Blue, TEXT("客户端使用SSR"));
+				// 获取爆炸范围内的Character
+				TArray<AActor*> HitCharacters;	// 存放范围内的Characters
+				TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes; // 碰撞检测参数，看不懂
+				ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
 
+				UKismetSystemLibrary::SphereOverlapActors(
+					GetWorld(),					// 上下文相关世界
+					GetActorLocation(),			// 判定坐标
+					DamageOuterRaius,			// 判定范围
+					ObjectTypes,				// 碰撞通道过滤结果
+					AActor::StaticClass(),		// 无视特定类
+					TArray<AActor*>(),			// 无视特定对象
+					HitCharacters				// 存储结果
+				);
+				for (AActor* Actor : HitCharacters)
+				{
+					DebugHeader::Print(FString::Printf(TEXT("ActorName: %s"), *Actor->GetName()), FColor::Blue);
+				}
+				// 发送SSR请求
+			}
+		}
+	}
+	
 	StartDestroyTimer();
 
 	// Play hit effects
