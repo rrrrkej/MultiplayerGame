@@ -108,6 +108,11 @@ void ULagCompensationComponent::ProjectileServerScoreRequest_Implementation(AMP_
 	}
 }
 
+void ULagCompensationComponent::ProjectileExplosiveServerScoreRequest(TArray<AMP_Character*>& HitCharacters, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, float HitTime)
+{
+
+}
+
 void ULagCompensationComponent::ShotgunServerScoreRequest_Implementation(const TArray<AMP_Character*>& HitCharacters, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations, float HitTime)
 {
 	FShotgunServerSideRewindResult ConfirmResult = ShotgunServerSideRewind(HitCharacters, TraceStart, HitLocations, HitTime);
@@ -338,7 +343,6 @@ FServerSideRewindResult ULagCompensationComponent::ProjectileConfirmHit(const FF
 	// 生成DebugSphere（调用本函数才会生成，所以Server端生成不了）
 	//PathParams.DrawDebugTime = 5.f;
 	//PathParams.DrawDebugType = EDrawDebugTrace::ForDuration;
-
 	FPredictProjectilePathResult PathResult;
 	UGameplayStatics::PredictProjectilePath(this, PathParams, PathResult);
 

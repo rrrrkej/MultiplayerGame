@@ -11,6 +11,7 @@ void AMP_PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AMP_PlayerState, Defeats);
+	DOREPLIFETIME(AMP_PlayerState, Team);
 }
 
 void AMP_PlayerState::AddToScore(float ScoreAmount)

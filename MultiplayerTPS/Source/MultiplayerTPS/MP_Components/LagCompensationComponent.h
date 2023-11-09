@@ -118,6 +118,15 @@ public:
 		float HitTime
 	);
 
+	////ServerRPC :
+	//UFUNCTION(Server, Reliable)
+	//void ProjectileExplosiveServerScoreRequest(
+	//	TArray<AMP_Character*>& HitCharacters,
+	//	const FVector_NetQuantize& TraceStart,
+	//	const FVector_NetQuantize100& InitialVelocity,
+	//	float HitTime
+	//);
+
 	// ServerRPC :
 	UFUNCTION(Server, Reliable)
 	void ShotgunServerScoreRequest(

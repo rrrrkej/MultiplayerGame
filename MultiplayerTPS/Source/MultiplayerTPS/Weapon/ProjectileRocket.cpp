@@ -83,8 +83,6 @@ void AProjectileRocket::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 
 			}
 			else //	客户端本地执行ssr
 			{
-				FString str = TEXT("客户端使用SSR");
-				GEngine->AddOnScreenDebugMessage(-1, 3, FColor::Blue, TEXT("客户端使用SSR"));
 				// 获取爆炸范围内的Character
 				TArray<AActor*> HitCharacters;	// 存放范围内的Characters
 				TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes; // 碰撞检测参数，看不懂
