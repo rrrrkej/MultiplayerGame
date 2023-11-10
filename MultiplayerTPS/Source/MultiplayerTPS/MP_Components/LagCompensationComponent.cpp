@@ -108,11 +108,6 @@ void ULagCompensationComponent::ProjectileServerScoreRequest_Implementation(AMP_
 	}
 }
 
-void ULagCompensationComponent::ProjectileExplosiveServerScoreRequest(TArray<AMP_Character*>& HitCharacters, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, float HitTime)
-{
-
-}
-
 void ULagCompensationComponent::ShotgunServerScoreRequest_Implementation(const TArray<AMP_Character*>& HitCharacters, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations, float HitTime)
 {
 	FShotgunServerSideRewindResult ConfirmResult = ShotgunServerSideRewind(HitCharacters, TraceStart, HitLocations, HitTime);
