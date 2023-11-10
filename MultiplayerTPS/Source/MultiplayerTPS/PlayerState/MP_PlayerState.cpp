@@ -69,3 +69,22 @@ void AMP_PlayerState::OnRep_Defeats()
 		}
 	}
 }
+
+void AMP_PlayerState::SetTeam(ETeam TeamToSet)
+{
+	Team = TeamToSet;
+	AMP_Character* MP_Character = Cast<AMP_Character>(GetPawn());
+	if (MP_Character)
+	{
+		MP_Character->SetTeamColor(Team);
+	}
+}
+
+void AMP_PlayerState::OnRep_Team()
+{
+	AMP_Character* MP_Character = Cast<AMP_Character>(GetPawn());
+	if (MP_Character)
+	{
+		MP_Character->SetTeamColor(Team);
+	}
+}

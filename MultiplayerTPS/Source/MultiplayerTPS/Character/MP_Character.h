@@ -9,6 +9,7 @@
 #include "MultiplayerTPS/Interfaces/InteractWithCrosshairsInterface.h"
 #include "Components/TimelineComponent.h"
 #include "MultiplayerTPS/Types/CombatState.h"
+#include "MultiplayerTPS/Types/Team.h"
 #include "MP_Character.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLeftGame);
@@ -91,6 +92,9 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastLostTheLead();
 
+	// Set mesh material depends on Team(Gamemode)
+	void SetTeamColor(ETeam Team);
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -112,6 +116,7 @@ protected:
 	// Set health progress bar in OverheadWidget
 	void SetOverheadHealth();
 
+#pragma region BoxComponents
 	/**
 	* Hit boxes used for server-side rewind, parameter name as same as skeleton name
 	*/
@@ -167,6 +172,7 @@ protected:
 	UBoxComponent* foot_r;
 
 	void DisableAllBoxesCollision();
+#pragma endregion
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
@@ -270,13 +276,32 @@ private:
 	void UpdateDissolveMaterial(float DissolveValue);
 	void StartDissolve();
 
+
+	/**
+	* Mesh Materials
+	*/
 	// Dynamic instance that we can change at runtime
 	UPROPERTY(VisibleAnywhere, Category = Elim)
 	UMaterialInstanceDynamic* DynamicDissolveMaterialInstance;
 
 	// Material instance set on the Blueprint, used with the dynamic material instance
-	UPROPERTY(EditAnywhere, Category = Elim)
+	UPROPERTY(VisibleAnywhere, Category = Elim)
 	UMaterialInstance* DissolveMaterialInstance;
+
+	UPROPERTY(EditAnywhere, Category = Elim)
+	UMaterialInstance* RedDissolveMatInst;
+
+	UPROPERTY(EditAnywhere, Category = Elim)
+	UMaterialInstance* RedMaterial;
+
+	UPROPERTY(EditANywhere, Category = Elim)
+	UMaterialInstance* BlueDissolveMatInst;
+
+	UPROPERTY(EditANywhere, Category = Elim)
+	UMaterialInstance* BlueMaterial;
+
+	UPROPERTY(EditANywhere, Category = Elim)
+	UMaterialInstance* OriginalMaterial;
 
 	/**
 	* Elim bot effect

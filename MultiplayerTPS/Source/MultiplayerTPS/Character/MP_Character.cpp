@@ -275,6 +275,7 @@ void AMP_Character::MulticastElim_Implementation(bool bPlayerLeftGame)
 	// Disable collision
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	// Spawn ElimBot component
 	if (ElimBotEffect)
@@ -419,6 +420,7 @@ void AMP_Character::PollInit()
 		{
 			MP_PlayerState->AddToScore(0.f);
 			MP_PlayerState->AddToDefeats(0);
+			SetTeamColor(MP_PlayerState->GetTeam());
 
 			AMP_GameState* MP_GameState = Cast<AMP_GameState>(UGameplayStatics::GetGameState(this));
 			if (MP_GameState && MP_GameState->TopScoringPlayers.Contains(MP_PlayerState))
@@ -472,11 +474,11 @@ void AMP_Character::MulticastGainedTheLead_Implementation()
 		// Spawn crown at head of character
 		CrownComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
 			CrownSystem,
-			GetCapsuleComponent(),
-			FName(),
-			GetActorLocation() + FVector(0.f, 0.f, 110.f),
+			GetMesh(),
+			FName("crown"),
+			FVector(0.f, 0.f, 0.f),
 			GetActorRotation(),
-			EAttachLocation::KeepWorldPosition,
+			EAttachLocation::SnapToTarget,
 			false
 		);
 	}
@@ -491,6 +493,26 @@ void AMP_Character::MulticastLostTheLead_Implementation()
 	if (CrownComponent)
 	{
 		CrownComponent->DestroyComponent();
+	}
+}
+
+void AMP_Character::SetTeamColor(ETeam Team)
+{
+	if (GetMesh() == nullptr || OriginalMaterial == nullptr) return;
+	switch (Team)
+	{
+		case ETeam::ET_NoTeam:
+			GetMesh()->SetMaterial(0, OriginalMaterial);
+			DissolveMaterialInstance = BlueDissolveMatInst;
+			break;
+		case ETeam::ET_BlueTeam:
+			GetMesh()->SetMaterial(0, BlueMaterial);
+			DissolveMaterialInstance = BlueDissolveMatInst;
+			break;
+		case ETeam::ET_RedTeam:
+			GetMesh()->SetMaterial(0, RedMaterial);
+			DissolveMaterialInstance = RedDissolveMatInst;
+			break;
 	}
 }
 
@@ -739,12 +761,20 @@ void AMP_Character::HideCamera()
 		{
 			CombatComponent->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = true;
 		}
+		if (CombatComponent && CombatComponent->SecondaryWeapon && CombatComponent->EquippedWeapon->GetWeaponMesh())
+		{
+			CombatComponent->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = true;
+		}
 
 	}
 	else
 	{
 		GetMesh()->SetVisibility(true);
 		if (CombatComponent && CombatComponent->EquippedWeapon && CombatComponent->EquippedWeapon->GetWeaponMesh())
+		{
+			CombatComponent->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = false;
+		}
+		if (CombatComponent && CombatComponent->SecondaryWeapon && CombatComponent->EquippedWeapon->GetWeaponMesh())
 		{
 			CombatComponent->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = false;
 		}
