@@ -34,6 +34,8 @@ public:
 	// Called by AMP_Character::ServerLeaveGame, Quit game
 	void PlayerLeftGame(class AMP_PlayerState* PlayerLeaving);
 
+	virtual float CalculateDamage(AController* Attacker, AController* Victim, float BaseDamage);
+
 	UPROPERTY(EditDefaultsOnly)
 	float WarmupTime = 10.f;
 

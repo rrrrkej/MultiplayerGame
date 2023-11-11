@@ -50,6 +50,23 @@ void ATeamsGameMode::Logout(AController* Exiting)
 	}
 }
 
+float ATeamsGameMode::CalculateDamage(AController* Attacker, AController* Victim, float BaseDamage)
+{
+	AMP_PlayerState* AttackerState = Attacker->GetPlayerState<AMP_PlayerState>();
+	AMP_PlayerState* VictimState = Victim->GetPlayerState<AMP_PlayerState>();
+	if (AttackerState == nullptr || VictimState == nullptr) return BaseDamage;
+	if (VictimState == AttackerState) // 自己伤害自己
+	{
+		return BaseDamage;
+	}
+	if (AttackerState->GetTeam() == VictimState->GetTeam()) // 不同队伍
+	{
+		return 0.f;
+	}
+
+	return BaseDamage;
+}
+
 void ATeamsGameMode::HandleMatchHasStarted()
 {
 	Super::HandleMatchHasStarted();

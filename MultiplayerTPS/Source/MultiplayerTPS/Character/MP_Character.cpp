@@ -691,11 +691,12 @@ void AMP_Character::SimuProxiesTurn()
 
 void AMP_Character::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
 {
-	if (bElimmed) return;
+	MP_GameMode = MP_GameMode == nullptr ? GetWorld()->GetAuthGameMode<AMP_GameMode>() : MP_GameMode;
+	if (bElimmed || MP_GameMode == nullptr) return;
 
 	//DebugHeader::Print(FString::Printf(TEXT("receive damage: %f"), Damage), FColor::Blue);
 	//	Received total damage
-	float TotalDamage = Damage;
+	float TotalDamage = MP_GameMode->CalculateDamage(InstigatorController, Controller, Damage);
 	if (Shield > 0.f)
 	{
 		//	Calculate damage to shield
@@ -719,7 +720,6 @@ void AMP_Character::ReceiveDamage(AActor* DamagedActor, float Damage, const UDam
 
 	if (Health == 0.f)
 	{
-		MP_GameMode = MP_GameMode == nullptr ?  GetWorld()->GetAuthGameMode<AMP_GameMode>() : MP_GameMode;
 		if (MP_GameMode)
 		{
 			MP_PlayerController = MP_PlayerController == nullptr ? Cast<AMP_PlayerController>(Controller) : MP_PlayerController;
