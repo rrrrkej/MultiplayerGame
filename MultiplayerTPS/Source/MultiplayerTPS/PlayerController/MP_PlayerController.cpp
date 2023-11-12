@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+Ôªø// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "MP_PlayerController.h"
@@ -11,6 +11,7 @@
 #include "EnhancedPlayerInput.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Components/VerticalBox.h"
 
 #include "MultiplayerTPS/Character/MP_Character.h"
 #include "MultiplayerTPS/UserWidget/MP_HUD.h"
@@ -23,6 +24,7 @@
 #include "MultiplayerTPS/PlayerState/MP_PlayerState.h"
 #include "MultiplayerTPS/Weapon/Weapon.h"
 #include "MultiplayerTPS/UserWidget/ReturnToMainMenu.h"
+#include "MultiplayerTPS/GameMode/TeamsGameMode.h"
 
 void AMP_PlayerController::BeginPlay()
 {
@@ -31,6 +33,7 @@ void AMP_PlayerController::BeginPlay()
 	MP_HUD = Cast<AMP_HUD>(GetHUD());
 
 	ServerCheckMatchState();
+
 }
 
 //	call at BeginPlay()
@@ -45,6 +48,7 @@ void AMP_PlayerController::ServerCheckMatchState_Implementation()
 		CooldownTime = GameMode->CooldownTime;
 		LevelStartingTime = GameMode->LevelStartingTime;
 		MatchState = GameMode->GetMatchState();
+		if (IsLocalController()) return;
 		ClientJoinMidgame(MatchState, WarmupTime, MatchTime, CooldownTime, LevelStartingTime);
 	}
 }
@@ -67,6 +71,8 @@ void AMP_PlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AMP_PlayerController, MatchState);
+	DOREPLIFETIME(AMP_PlayerController, bShowTeamScores);
+	DOREPLIFETIME(AMP_PlayerController, MaxScore);
 }
 
 void AMP_PlayerController::Tick(float DeltaTime)
@@ -80,7 +86,16 @@ void AMP_PlayerController::Tick(float DeltaTime)
 	PollInit();
 
 	CheckPing(DeltaTime);
-
+	
+	/*if (HasAuthority() && !IsLocalController())
+	{
+		if (bShowTeamScores)
+		{
+			DebugHeader::Print("true");
+		}
+		else 
+			DebugHeader::Print("false");
+	}*/
 }
 
 void AMP_PlayerController::ReceivedPlayer()
@@ -100,7 +115,7 @@ void AMP_PlayerController::OnPossess(APawn* InPawn)
 	AMP_Character* MP_Character = Cast<AMP_Character>(InPawn);
 	if (MP_Character)
 	{
-		// Character÷ÿ…˙µƒ ±∫Ú£¨Client±æµÿCharacterµƒController“—æ≠…Ë÷√∫√¡À£¨µ´ «Server∂À√ª…Ë÷√∫√
+		// CharacterÈáçÁîüÁöÑÊó∂ÂÄôÔºåClientÊú¨Âú∞CharacterÁöÑControllerÂ∑≤ÁªèËÆæÁΩÆÂ•Ω‰∫ÜÔºå‰ΩÜÊòØServerÁ´ØÊ≤°ËÆæÁΩÆÂ•Ω
 		SetHUDHealth(MP_Character->GetHealth(), MP_Character->GetMaxHealth());
 		SetHUDShield(MP_Character->GetShield(), MP_Character->GetMaxShield());
 		SetHUDGrenades(MP_Character->GetCombatComponent()->GetGrenades()); 
@@ -304,6 +319,83 @@ void AMP_PlayerController::SetHUDAnnouncementCountdown(float CountdownTime)
 	}
 }
 
+void AMP_PlayerController::HideTeamScores()
+{
+	//DebugHeader::Print("HideTeamScores()", FColor::Red);
+	MP_HUD = MP_HUD == nullptr ? Cast<AMP_HUD>(GetHUD()) : MP_HUD;
+	bool bHUDValid = MP_HUD &&
+		MP_HUD->CharacterOverlay &&
+		MP_HUD->CharacterOverlay->TeamScoreBox;
+	
+	// ÈöêËóèÁïåÈù¢
+	if (bHUDValid)
+	{
+		MP_HUD->CharacterOverlay->TeamScoreBox->SetRenderOpacity(0.f);
+	}
+}
+
+void AMP_PlayerController::InitTeamScores()
+{
+	MP_HUD = MP_HUD == nullptr ? Cast<AMP_HUD>(GetHUD()) : MP_HUD;
+	bool bHUDValid = MP_HUD && MP_HUD->CharacterOverlay;
+
+	if (bHUDValid && MP_HUD->CharacterOverlay->LeftScoreText)
+	{
+		MP_HUD->CharacterOverlay->LeftScoreText->SetText(FText::FromString("0"));
+	}
+	if (bHUDValid && MP_HUD->CharacterOverlay->RightScoreText)
+	{
+		MP_HUD->CharacterOverlay->RightScoreText->SetText(FText::FromString("0"));
+	}
+	if (bHUDValid && MP_HUD->CharacterOverlay->LeftScoreProgressBar)
+	{
+		MP_HUD->CharacterOverlay->LeftScoreProgressBar->SetPercent(0.f);
+	}
+	if (bHUDValid && MP_HUD->CharacterOverlay->RightScoreProgressBar)
+	{
+		MP_HUD->CharacterOverlay->RightScoreProgressBar->SetPercent(0.f);
+	}
+	// ÊòæÁ§∫ÁïåÈù¢
+	if (bHUDValid && MP_HUD->CharacterOverlay->TeamScoreBox)
+	{
+		MP_HUD->CharacterOverlay->TeamScoreBox->SetRenderOpacity(1.f);
+	}
+}
+
+void AMP_PlayerController::SetHUDRedTeamScore(int32 RedScore)
+{
+	MP_HUD = MP_HUD == nullptr ? Cast<AMP_HUD>(GetHUD()) : MP_HUD;
+	bool bHUDValid = MP_HUD &&
+		MP_HUD->CharacterOverlay &&
+		MP_HUD->CharacterOverlay->RightScoreText &&
+		MP_HUD->CharacterOverlay->RightScoreProgressBar;
+
+	if (bHUDValid)
+	{
+		FString Score = FString::Printf(TEXT("%d"), RedScore);
+		float Percentage = (float)RedScore  / MaxScore;
+		MP_HUD->CharacterOverlay->RightScoreText->SetText(FText::FromString(Score));
+		MP_HUD->CharacterOverlay->RightScoreProgressBar->SetPercent(Percentage);
+	}
+}
+
+void AMP_PlayerController::SetHUDBlueTeamScore(int32 BlueScore)
+{
+	MP_HUD = MP_HUD == nullptr ? Cast<AMP_HUD>(GetHUD()) : MP_HUD;
+	bool bHUDValid = MP_HUD && 
+		MP_HUD->CharacterOverlay &&
+		MP_HUD->CharacterOverlay->LeftScoreText &&
+		MP_HUD->CharacterOverlay->LeftScoreProgressBar;
+
+	if (bHUDValid)
+	{
+		FString Score = FString::Printf(TEXT("%d"), BlueScore);
+		float Percentage = (float)BlueScore / MaxScore;
+		MP_HUD->CharacterOverlay->LeftScoreText->SetText(FText::FromString(Score));
+		MP_HUD->CharacterOverlay->LeftScoreProgressBar->SetPercent(Percentage);
+	}
+}
+
 void AMP_PlayerController::SetHUDTime()
 {
 	float TimeLeft = 0.f;
@@ -312,7 +404,6 @@ void AMP_PlayerController::SetHUDTime()
 	else if (MatchState == MatchState::Cooldown) TimeLeft = CooldownTime + WarmupTime + MatchTime - GetServerTime() + LevelStartingTime;
 	uint32 SecondsLeft = FMath::CeilToInt(TimeLeft);
 
-	//	’‚±ﬂµƒ¥¶¿Ìø¥≤ª∂Æ
 	if (HasAuthority())
 	{
 		MP_GameMode = MP_GameMode == nullptr ? Cast<AMP_GameMode>(UGameplayStatics::GetGameMode(this)) : MP_GameMode; 
@@ -416,6 +507,7 @@ void AMP_PlayerController::PollInit()
 					bInitializeGrenades = false;
 					SetHUDGrenades(HUDGrenades);
 				}
+				ShowTeamScores(bShowTeamScores);
 			}
 		}
 	}
@@ -496,13 +588,12 @@ void AMP_PlayerController::ServerReportPintStatus_Implementation(bool bHighPing)
 	HighPingDelegate.Broadcast(bHighPing);
 }
 
-void AMP_PlayerController::OnMatchStateSet(FName State)
+void AMP_PlayerController::OnMatchStateSet(FName State, bool bTeamsMatch)
 {
 	MatchState = State;
-
 	if (MatchState == MatchState::InProgress)
 	{
-		HandleMatchHasStarted();
+		HandleMatchHasStarted(bTeamsMatch);
 	}
 	else if (MatchState == MatchState::Cooldown)
 	{
@@ -522,8 +613,10 @@ void AMP_PlayerController::OnRep_MatchState()
 	}
 }
 
-void AMP_PlayerController::HandleMatchHasStarted()
+void AMP_PlayerController::HandleMatchHasStarted(bool bTeamsMatch)
 {
+	if (HasAuthority()) bShowTeamScores = bTeamsMatch;	// Replicates ÂèòÈáè
+
 	MP_HUD = MP_HUD == nullptr ? Cast<AMP_HUD>(GetHUD()) : MP_HUD;
 	if (MP_HUD)
 	{
@@ -534,6 +627,10 @@ void AMP_PlayerController::HandleMatchHasStarted()
 		{
 			MP_HUD->Announcement->SetVisibility(ESlateVisibility::Hidden);
 		}
+
+		// Teamsmode widget visibility
+		if (!HasAuthority()) return; 
+		ShowTeamScores(bShowTeamScores);
 	}
 }
 
@@ -674,5 +771,23 @@ void AMP_PlayerController::ClientElimAnnouncement_Implementation(APlayerState* A
 				MP_HUD->AddElimAnnouncement(Attacker->GetPlayerName(), Victim->GetPlayerName());
 			}
 		}
+	}
+}
+
+
+void AMP_PlayerController::OnRep_ShowTeamScores()
+{
+	ShowTeamScores(bShowTeamScores);
+}
+
+void AMP_PlayerController::ShowTeamScores(bool bShow)
+{
+	if (bShow)
+	{
+		InitTeamScores();
+	}
+	else
+	{
+		HideTeamScores();
 	}
 }

@@ -318,7 +318,6 @@ FServerSideRewindResult ULagCompensationComponent::ProjectileConfirmHit(const FF
 	MoveBoxes(HitCharacter, Package);
 	EnableCharacterMeshCollision(HitCharacter, ECollisionEnabled::NoCollision);
 
-	// Enable collision for the head first
 	for (TPair<FName, UBoxComponent*>& BoxPair : Package.Character->HitCollisionBoxes)
 	{
 		if (BoxPair.Value == nullptr) continue;

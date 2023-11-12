@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "MP_GameMode.h"
@@ -66,7 +66,7 @@ void AMP_GameMode::OnMatchStateSet()
 		AMP_PlayerController* MP_PlayerController = Cast<AMP_PlayerController>(*It);
 		if (MP_PlayerController)
 		{
-			MP_PlayerController->OnMatchStateSet(MatchState);
+			MP_PlayerController->OnMatchStateSet(MatchState, bTeamsMode);
 		}
 	}
 }

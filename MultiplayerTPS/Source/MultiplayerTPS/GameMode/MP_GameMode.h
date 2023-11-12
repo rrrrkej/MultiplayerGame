@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -37,16 +37,17 @@ public:
 	virtual float CalculateDamage(AController* Attacker, AController* Victim, float BaseDamage);
 
 	UPROPERTY(EditDefaultsOnly)
-	float WarmupTime = 10.f;
+	float WarmupTime = 10.f;	// 热身模式时间
 
 	UPROPERTY(EditDefaultsOnly)
-	float MatchTime = 120.f;
+	float MatchTime = 120.f;	// 比赛时间
 
 	UPROPERTY(EditDefaultsOnly)
-	float CooldownTime = 10.f;
+	float CooldownTime = 10.f;	// 比赛结束后，自动开始下一场比赛前的冷却时间
 
-	float LevelStartingTime = 0;
+	float LevelStartingTime = 0; // 关卡（map）开始时间
 
+	bool bTeamsMode = false; // 是否是TeamsGameMode
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnMatchStateSet() override;

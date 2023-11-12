@@ -33,15 +33,19 @@ public:
 	TArray<AMP_PlayerState*> BlueTeam;
 
 	UPROPERTY(ReplicatedUsing = OnRep_RedTeamScore)
-	float RedTeamScore = 0.f;
+	int RedTeamScore = 0;
 	UFUNCTION() 
 	void OnRep_RedTeamScore();
 
 	UPROPERTY(ReplicatedUsing = OnRep_BlueTeamScore)
-	float BlueTeamScore = 0.f;
+	int BlueTeamScore = 0;
 	UFUNCTION()
 	void OnRep_BlueTeamScore();
 
+	void RedTeamScores();
+	void BlueTeamScores();
+
+	
 private:
 	float TopScore = 0;
 };

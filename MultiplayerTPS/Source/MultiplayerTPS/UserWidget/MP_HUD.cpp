@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "MP_HUD.h"
@@ -15,6 +15,7 @@
 void AMP_HUD::BeginPlay()
 {
 	Super::BeginPlay();
+
 
 }
 
@@ -54,7 +55,7 @@ void AMP_HUD::AddElimAnnouncement(FString Attacker, FString Victim)
 			{
 				if (ElimWidget && ElimWidget->AnnouncementBox)
 				{
-					// »ñµÃAnnoucnementBoxÔÚCanvasPannelÉÏµÄÎ»ÖÃµÈÊôĞÔ
+					// è·å¾—AnnoucnementBoxåœ¨CanvasPannelä¸Šçš„ä½ç½®ç­‰å±æ€§
 					UCanvasPanelSlot* CanvasSlot = UWidgetLayoutLibrary::SlotAsCanvasSlot(ElimWidget->AnnouncementBox);
 					if (CanvasSlot)
 					{
@@ -70,7 +71,7 @@ void AMP_HUD::AddElimAnnouncement(FString Attacker, FString Victim)
 		FTimerHandle ElimWidgetTimer;
 		FTimerDelegate ElimWidgetDelegate;
 		ElimWidgetDelegate.BindUFunction(this, FName("ElimAnnouncementTimerFinished"), ElimAnnouncementWidget);
-		// SetTimer²»ÄÜ½ÓÊÜ¸ø°ó¶¨µÄº¯Êı´«Èë²ÎÊı£¬ËùÒÔÕâÀïÁíÍâ°ó¶¨Î¯ÍĞº¯Êı²¢´«Èë²ÎÊı£¬ÔÙÉèÖÃTimer¿ØÖÆ´¥·¢Ê±¼ä
+		// SetTimerä¸èƒ½æ¥å—ç»™ç»‘å®šçš„å‡½æ•°ä¼ å…¥å‚æ•°ï¼Œæ‰€ä»¥è¿™é‡Œå¦å¤–ç»‘å®šå§”æ‰˜å‡½æ•°å¹¶ä¼ å…¥å‚æ•°ï¼Œå†è®¾ç½®Timeræ§åˆ¶è§¦å‘æ—¶é—´
 		GetWorldTimerManager().SetTimer(
 			ElimWidgetTimer,
 			ElimWidgetDelegate,

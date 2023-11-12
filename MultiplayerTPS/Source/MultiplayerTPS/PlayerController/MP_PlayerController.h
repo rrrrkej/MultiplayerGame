@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -25,6 +25,7 @@ class MULTIPLAYERTPS_API AMP_PlayerController : public APlayerController
 	GENERATED_BODY()
 	
 public:
+	// Character properties
 	void SetHUDHealth(float Health, float MaxHealth);
 	void SetHUDShield(float Shield, float MaxShidle);
 	void SetHUDScore(float Score);
@@ -32,9 +33,26 @@ public:
 	void SetHUDWeaponAmmo(int32 Ammo);
 	void SetHUDCarriedAmmo(int32 Ammo);
 	void SetHUDMatchCountdown(float CountdownTime);
-	void SetHUDAnnouncementCountdown(float CountdownTime);
 	void SetHUDGrenades(int32 GrenadesNum);
+
+	void SetHUDAnnouncementCountdown(float CountdownTime);
 	
+	/**
+	* Team mode Score widget
+	*/ 
+	void HideTeamScores();
+	void InitTeamScores();
+	void SetHUDRedTeamScore(int32 RedScore);
+	void SetHUDBlueTeamScore(int32 BlueScore);
+	bool bInitializeScoresBox = false;
+
+	// Replictes variable ï¼š handle client widget visiblity
+	UPROPERTY(ReplicatedUsing = OnRep_ShowTeamScores)
+	bool bShowTeamScores = false;
+	UFUNCTION()
+	void OnRep_ShowTeamScores();
+
+	// APlayerController virtual function
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void ReceivedPlayer() override;
@@ -42,10 +60,13 @@ public:
 
 	virtual  float GetServerTime(); //Synced with server world clock
 
-	void OnMatchStateSet(FName State);
+	// è®¾ç½®è¿›å…¥ä¸åŒçš„state
+	virtual void OnMatchStateSet(FName State, bool bTeamsMatch = false);
 	// call the function corresponding to the value of MatchState
-	void HandleMatchHasStarted();
+	void HandleMatchHasStarted(bool bTeamsMatch = false);
 	void HandleCooldown();
+	// Set visibility of ScoresBox depends bShowTeamScores
+	void ShowTeamScores(bool bShow);
 
 	// half time of RTT
 	float SingleTripTime = 0.f;
@@ -57,7 +78,7 @@ public:
 	*/
 	void BroadcastElim(APlayerState* Attacker, APlayerState* Victim);
 protected: 
-	// Êµ¼ÊÊä³öµÄÄÚÈİ£¬¸ù¾İ½ÇÉ«Ïà¶Ô¹ØÏµ½øĞĞµ÷Õû
+	// å®é™…è¾“å‡ºçš„å†…å®¹ï¼Œæ ¹æ®è§’è‰²ç›¸å¯¹å…³ç³»è¿›è¡Œè°ƒæ•´
 	UFUNCTION(Client, Reliable)
 	void ClientElimAnnouncement(APlayerState* Attacker, APlayerState* Victim);
 
@@ -108,6 +129,10 @@ private:
 
 	UPROPERTY()
 	AMP_GameMode* MP_GameMode;
+
+	// MaxScore of TeamsGameMode
+	UPROPERTY(Replicated)
+	int32 MaxScore = -1;
 
 	// Timer from GameMode class
 	float MatchTime = 0.f;
@@ -169,6 +194,7 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	float HighPingThreshold = 50.f;
+
 #pragma region UI
 	/**
 	* Return to main menu
@@ -198,5 +224,9 @@ protected:
 	void ReturnMenu_Pressed(const FInputActionValue& Value);
 
 #pragma endregion
+
+public:
+	FORCEINLINE void SetMaxScore(int32 Score)  { MaxScore = Score; }
+
 };
 

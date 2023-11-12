@@ -6,10 +6,21 @@
 
 #include "MultiplayerTPS/GameState/MP_GameState.h"
 #include "MultiplayerTPS/PlayerState/MP_PlayerState.h"
+#include "MultiplayerTPS/PlayerController/MP_PlayerController.h"
+
+ATeamsGameMode::ATeamsGameMode()
+{
+	bTeamsMode = true;
+}
 
 void ATeamsGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
+
+	// 当前比赛模式下，PlayerController里有需要用的参数
+	AMP_PlayerController* PlayerController = Cast<AMP_PlayerController>(NewPlayer);
+	PlayerController->SetMaxScore(MaxScore);
+	PlayerController->bShowTeamScores = true;
 
 	// 团队对抗，实现两边人数平衡
 	AMP_GameState* MP_GameState = Cast<AMP_GameState>(UGameplayStatics::GetGameState(this));
@@ -65,6 +76,24 @@ float ATeamsGameMode::CalculateDamage(AController* Attacker, AController* Victim
 	}
 
 	return BaseDamage;
+}
+
+void ATeamsGameMode::PlayerEliminated(AMP_Character* ElimmedCharacter, AMP_PlayerController* VictimController, AMP_PlayerController* AttackerController)
+{
+	Super::PlayerEliminated(ElimmedCharacter, VictimController, AttackerController);
+	AMP_GameState* MP_GameState = Cast<AMP_GameState>(UGameplayStatics::GetGameState(this));
+	AMP_PlayerState* AttackerPlayerState = AttackerController ? Cast<AMP_PlayerState>(AttackerController->PlayerState) : nullptr;
+	if (MP_GameState && AttackerPlayerState)
+	{
+		if (AttackerPlayerState->GetTeam() == ETeam::ET_BlueTeam)
+		{
+			MP_GameState->BlueTeamScores();
+		}
+		else if (AttackerPlayerState->GetTeam() == ETeam::ET_RedTeam)
+		{
+			MP_GameState->RedTeamScores();
+		}
+	}
 }
 
 void ATeamsGameMode::HandleMatchHasStarted()

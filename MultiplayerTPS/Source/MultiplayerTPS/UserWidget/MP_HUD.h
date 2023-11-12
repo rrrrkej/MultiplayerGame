@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -59,7 +59,6 @@ public:
 	// Add Announcement userwidget to viewport
 	void AddAnnouncement();
 	
-
 protected:
 	virtual void BeginPlay() override;
 
@@ -77,7 +76,6 @@ private:
 	/**
 	* ElimAnnouncement
 	*/
-private:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UElimAnnouncement> ElimAnnouncementClass;
 
