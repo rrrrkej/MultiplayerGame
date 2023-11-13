@@ -25,6 +25,7 @@
 #include "MultiplayerTPS/Weapon/Weapon.h"
 #include "MultiplayerTPS/UserWidget/ReturnToMainMenu.h"
 #include "MultiplayerTPS/GameMode/TeamsGameMode.h"
+#include "MultiplayerTPS/Types/Announcement.h"
 
 void AMP_PlayerController::BeginPlay()
 {
@@ -48,6 +49,10 @@ void AMP_PlayerController::ServerCheckMatchState_Implementation()
 		CooldownTime = GameMode->CooldownTime;
 		LevelStartingTime = GameMode->LevelStartingTime;
 		MatchState = GameMode->GetMatchState();
+		if (MP_HUD && MatchState == MatchState::WaitingToStart)
+		{
+			MP_HUD->AddAnnouncement();
+		}
 		if (IsLocalController()) return;
 		ClientJoinMidgame(MatchState, WarmupTime, MatchTime, CooldownTime, LevelStartingTime);
 	}
@@ -87,15 +92,6 @@ void AMP_PlayerController::Tick(float DeltaTime)
 
 	CheckPing(DeltaTime);
 	
-	/*if (HasAuthority() && !IsLocalController())
-	{
-		if (bShowTeamScores)
-		{
-			DebugHeader::Print("true");
-		}
-		else 
-			DebugHeader::Print("false");
-	}*/
 }
 
 void AMP_PlayerController::ReceivedPlayer()
@@ -637,6 +633,7 @@ void AMP_PlayerController::HandleMatchHasStarted(bool bTeamsMatch)
 void AMP_PlayerController::HandleCooldown()
 {
 	MP_HUD = MP_HUD == nullptr ? Cast<AMP_HUD>(GetHUD()) : MP_HUD;
+	//DebugHeader::Print("HandleCooldown()");
 	if (MP_HUD)
 	{
 		MP_HUD->CharacterOverlay->RemoveFromParent();
@@ -647,8 +644,9 @@ void AMP_PlayerController::HandleCooldown()
 
 		if (bHUDValid)
 		{
+			//DebugHeader::Print("bHUDValid true");
 			MP_HUD->Announcement->SetVisibility(ESlateVisibility::Visible);
-			FString AnnouncementText("New Match States In:");
+			FString AnnouncementText = Announcement::NewMatchStartsIn;
 			MP_HUD->Announcement->AnnouncementText->SetText(FText::FromString(AnnouncementText));
 
 			//	Set InfoText
@@ -657,30 +655,10 @@ void AMP_PlayerController::HandleCooldown()
 			if (MP_GameState && MP_PlayerState)
 			{
 				TArray<AMP_PlayerState*> TopPlayers = MP_GameState->TopScoringPlayers;
-				FString InfoTextString;
-				if (TopPlayers.Num() == 0)
-				{
-					InfoTextString = FString("There is no winner.");
-				}
-				else if (TopPlayers.Num() == 1 && TopPlayers[0] == MP_PlayerState)
-				{
-					InfoTextString = FString("You are the winner!");
-				}
-				else if (TopPlayers.Num() == 1 )
-				{
-					InfoTextString = FString::Printf(TEXT("Winner: \n%s"), *TopPlayers[0]->GetPlayerName());
-				}
-				else if (TopPlayers.Num() > 1)
-				{
-					InfoTextString = FString("Players tied for the win:\n");
-					for (auto TiedPlayer : TopPlayers)
-					{
-						InfoTextString.Append(FString::Printf(TEXT("%s\n"), *TiedPlayer->GetPlayerName()));
-					}
-				}
+				FString InfoTextString = bShowTeamScores ? GetTeamInfoText(MP_GameState): GetInfoText(TopPlayers);
+
 				MP_HUD->Announcement->InfoText->SetText(FText::FromString(InfoTextString));
 			}
-			
 		}
 	}
 
@@ -695,6 +673,71 @@ void AMP_PlayerController::HandleCooldown()
 	}
 }
 
+FString AMP_PlayerController::GetInfoText(const TArray<AMP_PlayerState*>& Players)
+{
+	AMP_PlayerState* MP_PlayerState = GetPlayerState<AMP_PlayerState>(); // 本地玩家标记
+	if (!MP_PlayerState) return FString();
+	FString InfoTextString;
+	if (Players.Num() == 0)
+	{
+		InfoTextString = Announcement::ThereIsNoWinner;
+	}
+	else if (Players.Num() == 1 && Players[0] == MP_PlayerState)
+	{
+		InfoTextString = Announcement::YouAreTheWinner;
+	}
+	else if (Players.Num() == 1)
+	{
+		InfoTextString = FString::Printf(TEXT("Winner: \n%s"), *Players[0]->GetPlayerName());
+	}
+	else if (Players.Num() > 1)
+	{
+		InfoTextString = Announcement::PlayersTiesForTheWin;
+		InfoTextString.Append(FString("\n"));
+		for (auto TiedPlayer : Players)
+		{
+			InfoTextString.Append(FString::Printf(TEXT("%s\n"), *TiedPlayer->GetPlayerName()));
+		}
+	}
+	return InfoTextString;
+}
+
+FString AMP_PlayerController::GetTeamInfoText(AMP_GameState* MP_GameState)
+{
+	if (!MP_GameState) return FString();
+	FString InfoTextString;
+
+	const int32 RedTeamScore = MP_GameState->RedTeamScore;
+	const int32 BlueTeamScore = MP_GameState->BlueTeamScore;
+	
+	if (RedTeamScore == 0 && BlueTeamScore == 0)
+	{
+		InfoTextString = Announcement::ThereIsNoWinner;
+	}
+	else if (RedTeamScore == BlueTeamScore)
+	{
+		InfoTextString = FString::Printf(TEXT("%s\n"), *Announcement::TeamsTiedForTheWin);
+		InfoTextString.Append(Announcement::RedTeam);
+		InfoTextString.Append(TEXT("\n"));
+		InfoTextString.Append(Announcement::BlueTeam);
+		InfoTextString.Append(TEXT("\n"));
+	}
+	else if (RedTeamScore > BlueTeamScore)
+	{
+		InfoTextString = Announcement::RedTeamWins;
+		InfoTextString.Append(TEXT("\n"));
+		InfoTextString.Append(FString::Printf(TEXT("%s: %d\n"), *Announcement::RedTeam, RedTeamScore));
+		InfoTextString.Append(FString::Printf(TEXT("%s: %d\n"), *Announcement::BlueTeam, BlueTeamScore));
+	}
+	else if (RedTeamScore < BlueTeamScore)
+	{
+		InfoTextString = Announcement::BlueTeamWins;
+		InfoTextString.Append(TEXT("\n"));
+		InfoTextString.Append(FString::Printf(TEXT("%s: %d\n"), *Announcement::BlueTeam, BlueTeamScore));
+		InfoTextString.Append(FString::Printf(TEXT("%s: %d\n"), *Announcement::RedTeam, RedTeamScore));
+	}
+	return InfoTextString;
+}
 
 void AMP_PlayerController::SetupInputComponent()
 {

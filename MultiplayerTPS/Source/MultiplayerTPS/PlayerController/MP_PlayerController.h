@@ -16,6 +16,8 @@ class AMP_GameMode;
 class UInputMappingContext;
 class UInputAction;
 class UUserWidget;
+class AMP_PlayerState;
+class AMP_GameState;
 /**
  * 
  */
@@ -122,6 +124,12 @@ protected:
 
 	// Check Ping in tick()
 	void CheckPing(float DeltaTime);
+
+	/**
+	* Text for userwidget.Announcement
+	*/
+	FString GetInfoText(const TArray<AMP_PlayerState*>& Players);
+	FString GetTeamInfoText(AMP_GameState* MP_GameState);
 
 private:
 	UPROPERTY()
