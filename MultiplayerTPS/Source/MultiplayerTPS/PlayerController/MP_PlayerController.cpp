@@ -92,6 +92,10 @@ void AMP_PlayerController::Tick(float DeltaTime)
 
 	CheckPing(DeltaTime);
 	
+	if (MatchState == MatchState::Cooldown)
+	{
+		CooldownElapse += DeltaTime;
+	}
 }
 
 void AMP_PlayerController::ReceivedPlayer()
@@ -397,7 +401,7 @@ void AMP_PlayerController::SetHUDTime()
 	float TimeLeft = 0.f;
 	if (MatchState == MatchState::WaitingToStart) TimeLeft = WarmupTime - GetServerTime() + LevelStartingTime;
 	else if (MatchState == MatchState::InProgress) TimeLeft = WarmupTime + MatchTime - GetServerTime() + LevelStartingTime;
-	else if (MatchState == MatchState::Cooldown) TimeLeft = CooldownTime + WarmupTime + MatchTime - GetServerTime() + LevelStartingTime;
+	else if (MatchState == MatchState::Cooldown) TimeLeft = CooldownTime /*- CooldownElapse*/+ WarmupTime + MatchTime - GetServerTime() + LevelStartingTime;
 	uint32 SecondsLeft = FMath::CeilToInt(TimeLeft);
 
 	if (HasAuthority())

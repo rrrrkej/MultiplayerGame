@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "MP_AnimInstance.h"
@@ -75,6 +75,9 @@ void UMP_AnimInstance::NativeUpdateAnimation(float DeltaTime)
 	// Update Elim
 	bElimmed = MP_Character->IsElimmed();
 		
+	// FlagCrouch
+	bHoldingFlag = MP_Character->IsHoldingTheFlag();
+
 	// Update RightHand Transform and LeftHandTransform
 	if (bWeaponEquipped && EquippedWeapon && EquippedWeapon->GetWeaponMesh() && MP_Character->GetMesh())
 	{
@@ -102,7 +105,7 @@ void UMP_AnimInstance::NativeUpdateAnimation(float DeltaTime)
 	* Update boolean in AnimtionBlueprint
 	* 1.ECombatState:Character state, declare in CombatComponent.h
 	* 2.bDisableGameplay:alter when MatchState change
-	* ÏÐÖÃ×´Ì¬£¬Ö´ÐÐFABRIK, ·ÇÏÐÖÃ×´Ì¬£¬ÒÔ±¾µØ×´Ì¬Îª×¼ÅÐ¶ÏÊÇ·ñFABRIK
+	* é—²ç½®çŠ¶æ€ï¼Œæ‰§è¡ŒFABRIK, éžé—²ç½®çŠ¶æ€ï¼Œä»¥æœ¬åœ°çŠ¶æ€ä¸ºå‡†åˆ¤æ–­æ˜¯å¦FABRIK
 	*/
 	bUseFABRIK = MP_Character->GetCombatState() == ECombatState::ECS_Unoccupied;
 	if (MP_Character->IsLocallyControlled() && MP_Character->GetCombatState() != ECombatState::ECS_Unoccupied)

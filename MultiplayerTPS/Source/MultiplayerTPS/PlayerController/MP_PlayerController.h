@@ -203,6 +203,8 @@ private:
 	UPROPERTY(EditAnywhere)
 	float HighPingThreshold = 50.f;
 
+	// GameState进入 Cooldown的累计时间
+	float CooldownElapse = 0.f;
 #pragma region UI
 	/**
 	* Return to main menu

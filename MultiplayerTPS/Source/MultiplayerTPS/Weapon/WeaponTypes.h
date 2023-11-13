@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #define TRACE_LENGTH 8000
 
@@ -16,6 +16,7 @@ enum class EWeaponType : uint8
 	EWT_Shotgun UMETA(DisplayName = "Shotgun"),	// mag = 6
 	EWT_SniperRifle UMETA(DisplayName = "Sniper Rifle"), // mag = 4
 	EWT_GrenadeLauncher UMETA(DisplayName = "Grenade Launcher"),	// mag = 4
+	EWT_Flag UMETA(DisplayName = "Flag"), // Special pickup
 
 	EWT_MAX UMETA(DisplayName = "DefaultMAX")
 };

@@ -26,6 +26,7 @@ void ATeamsGameMode::PostLogin(APlayerController* NewPlayer)
 	AMP_GameState* MP_GameState = Cast<AMP_GameState>(UGameplayStatics::GetGameState(this));
 	if (MP_GameState)
 	{
+		MP_GameState->SetMaxScore(MaxScore);
 		AMP_PlayerState* MP_PlayerState = NewPlayer->GetPlayerState<AMP_PlayerState>();
 		if (MP_PlayerState && MP_PlayerState->GetTeam() == ETeam::ET_NoTeam)
 		{
@@ -123,3 +124,4 @@ void ATeamsGameMode::HandleMatchHasStarted()
 		}
 	}
 }
+

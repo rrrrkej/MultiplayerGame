@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "MP_Character.h"
@@ -39,7 +39,7 @@ AMP_Character::AMP_Character()
 	PrimaryActorTick.bCanEverTick = true;
 
 	// Initialize Character setting
-	// Éú³ÉÊ±µÄÅö×²´¦Àí²ßÂÔ£¬Èç¹û¼ì²âµ½ÁËÅö×²£¬Ôò»á²éÕÒ¸½½üÃ»ÓĞÅö×²µÄÎ»ÖÃ½øĞĞÉú³É
+	// ç”Ÿæˆæ—¶çš„ç¢°æ’å¤„ç†ç­–ç•¥ï¼Œå¦‚æœæ£€æµ‹åˆ°äº†ç¢°æ’ï¼Œåˆ™ä¼šæŸ¥æ‰¾é™„è¿‘æ²¡æœ‰ç¢°æ’çš„ä½ç½®è¿›è¡Œç”Ÿæˆ
 	SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
 	// initialize CameraBoom attribute
@@ -187,9 +187,9 @@ void AMP_Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	// ÔÚAMP_CharacterµÄÉúÃüÖÜÆÚÄÚ£¬Èç¹ûOverlappingWeaponµÄÖµ·¢ÉúÁË±ä»¯£¬·şÎñÆ÷»á·¢ËÍµ½Ã¿Ò»¸ö¿Í»§¶Ë
+	// åœ¨AMP_Characterçš„ç”Ÿå‘½å‘¨æœŸå†…ï¼Œå¦‚æœOverlappingWeaponçš„å€¼å‘ç”Ÿäº†å˜åŒ–ï¼ŒæœåŠ¡å™¨ä¼šå‘é€åˆ°æ¯ä¸€ä¸ªå®¢æˆ·ç«¯
 	//DOREPLIFETIME(AMP_Character, OverlappingWeapon);
-	// Ìõ¼ş·¢ËÍ
+	// æ¡ä»¶å‘é€
 	DOREPLIFETIME_CONDITION(AMP_Character, OverlappingWeapon, COND_OwnerOnly);
 	DOREPLIFETIME(AMP_Character, Health);
 	DOREPLIFETIME(AMP_Character, Shield);
@@ -353,6 +353,10 @@ void AMP_Character::HandleWeaponWhenElimed(AWeapon* Weapon)
 	{
 		Weapon->Dropped();
 	}
+	if (CombatComponent->bHoldingTheFlag)
+	{
+		CombatComponent->TheFlag->Dropped();
+	}
 }
 
 void AMP_Character::Destroyed()
@@ -433,6 +437,13 @@ void AMP_Character::PollInit()
 
 void AMP_Character::RotateInPlace(float DeltaTime)
 {
+	if (CombatComponent && CombatComponent->bHoldingTheFlag)
+	{
+		bUseControllerRotationYaw = false;
+		GetCharacterMovement()->bOrientRotationToMovement = true;
+		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+		return;
+	}
 	//	Handle
 	if (bDisableGameplay)
 	{
@@ -644,7 +655,7 @@ void AMP_Character::UpdateHUDAmmo()
 void AMP_Character::CalculateAO_Pitch()
 {
 	AO_Pitch = GetBaseAimRotation().Pitch;
-	//ÓÉÓÚPitchÔÚÍøÂç´«ÊäµÄ¹ı³ÌÖĞÓÉÓĞ·ûºÅÊı±ä³ÉÎŞ·ûºÅÊı£¬ËùÒÔÒªÓ³Éä»ØÈ¥
+	//ç”±äºPitchåœ¨ç½‘ç»œä¼ è¾“çš„è¿‡ç¨‹ä¸­ç”±æœ‰ç¬¦å·æ•°å˜æˆæ— ç¬¦å·æ•°ï¼Œæ‰€ä»¥è¦æ˜ å°„å›å»
 	if (AO_Pitch > 90.f && !IsLocallyControlled())
 	{
 		// map pitch from [270, 360) to [-90, 0)
@@ -886,14 +897,14 @@ void AMP_Character::PlayThrowGrenadeMontage()
 //called by server
 void AMP_Character::SetOverlappingWeapon(AWeapon* Weapon)
 {
-	//·ÇÑÏ½÷Ìõ¼ş£¬ÓÃÓÚ³öWeapon·¶Î§µÄÊ±ºò¹ØµôPickupWidget
+	//éä¸¥è°¨æ¡ä»¶ï¼Œç”¨äºå‡ºWeaponèŒƒå›´çš„æ—¶å€™å…³æ‰PickupWidget
 	if (OverlappingWeapon)
 	{
 		OverlappingWeapon->ShowPickupWidget(false);
 	}
 	OverlappingWeapon = Weapon;
 
-	//¼ì²éÊÇ·ñÊÇ·şÎñÆ÷¶Ë£¬Èç¹ûÊÇ¿Í»§¶ËµÄ»°·µ»Øfalse
+	//æ£€æŸ¥æ˜¯å¦æ˜¯æœåŠ¡å™¨ç«¯ï¼Œå¦‚æœæ˜¯å®¢æˆ·ç«¯çš„è¯è¿”å›false
 	if (IsLocallyControlled())
 	{
 		if (OverlappingWeapon)
@@ -966,6 +977,12 @@ bool AMP_Character::IsLocallyReloading()
 	if (CombatComponent == nullptr) return false;
 
 	return CombatComponent->bLocallyReloading;
+}
+
+bool AMP_Character::IsHoldingTheFlag() const
+{
+	if (CombatComponent == nullptr) return false;
+	return CombatComponent->bHoldingTheFlag;
 }
 
 #pragma region InputBinding
@@ -1059,6 +1076,7 @@ void AMP_Character::Look(const FInputActionValue& Value)
 
 void AMP_Character::JumpPressed(const FInputActionValue& Value)
 {
+	if (CombatComponent && CombatComponent->bHoldingTheFlag) return;
 	if (bDisableGameplay) return;
 
 	if (bIsCrouched)
@@ -1069,7 +1087,6 @@ void AMP_Character::JumpPressed(const FInputActionValue& Value)
 	{
 		Super::Jump();
 	}
-	
 }
 
 void AMP_Character::Interaction(const FInputActionValue& Value) // typedef EquipButtonPressed()
@@ -1077,6 +1094,8 @@ void AMP_Character::Interaction(const FInputActionValue& Value) // typedef Equip
 	if (bDisableGameplay) return;
 	if (CombatComponent && CombatComponent->CombatState == ECombatState::ECS_Unoccupied)
 	{
+		if (CombatComponent->bHoldingTheFlag) return;
+
 		ServerEquipButtonPressed();
 		if (CombatComponent->ShouldSwapWeapons() &&
 			!HasAuthority() && 
@@ -1091,6 +1110,7 @@ void AMP_Character::Interaction(const FInputActionValue& Value) // typedef Equip
 
 void AMP_Character::CrouchPressed(const FInputActionValue& Value)
 {
+	if (CombatComponent && CombatComponent->bHoldingTheFlag) return;
 	if (bDisableGameplay) return;
 
 	if (bIsCrouched)
@@ -1105,6 +1125,7 @@ void AMP_Character::CrouchPressed(const FInputActionValue& Value)
 
 void AMP_Character::Aim(const FInputActionValue& Value)
 {
+	if (CombatComponent && CombatComponent->bHoldingTheFlag) return;
 	if (bDisableGameplay) return;
 
 	bool bAiming = Value.Get<bool>();
@@ -1117,6 +1138,7 @@ void AMP_Character::Aim(const FInputActionValue& Value)
 
 void AMP_Character::EndAim(const FInputActionValue& Value)
 {
+	if (CombatComponent && CombatComponent->bHoldingTheFlag) return;
 	if (bDisableGameplay) return;
 
 	bool bAiming = Value.Get<bool>();
@@ -1128,6 +1150,7 @@ void AMP_Character::EndAim(const FInputActionValue& Value)
 
 void AMP_Character::Fire(const FInputActionValue& Value)
 {
+	if (CombatComponent && CombatComponent->bHoldingTheFlag) return;
 	if (bDisableGameplay) return;
 
 	bool bFire = Value.Get<bool>();
@@ -1139,6 +1162,7 @@ void AMP_Character::Fire(const FInputActionValue& Value)
 
 void AMP_Character::EndFire(const FInputActionValue& Value)
 {
+	if (CombatComponent && CombatComponent->bHoldingTheFlag) return;
 	bool bFire = Value.Get<bool>();
 	if (CombatComponent)
 	{
@@ -1148,6 +1172,7 @@ void AMP_Character::EndFire(const FInputActionValue& Value)
 
 void AMP_Character::Reload(const FInputActionValue& Value)
 {
+	if (CombatComponent && CombatComponent->bHoldingTheFlag) return;
 	if (bDisableGameplay) return;
 
 	bool bReload = Value.Get<bool>();
@@ -1159,6 +1184,7 @@ void AMP_Character::Reload(const FInputActionValue& Value)
 
 void AMP_Character::ThrowGrenade(const FInputActionValue& Value)
 {
+	if (CombatComponent && CombatComponent->bHoldingTheFlag) return;
 	if (CombatComponent && CombatComponent->EquippedWeapon)
 	{
 		CombatComponent->ThrowGrenade();
@@ -1182,6 +1208,7 @@ void AMP_Character::ServerEquipButtonPressed_Implementation()
 
 void AMP_Character::EquipPrimaryWeapon(const FInputActionValue& Value)
 {
+	if (CombatComponent && CombatComponent->bHoldingTheFlag) return;
 	if (CombatComponent && CombatComponent->PrimaryWeaponPtr)
 	{
 		CombatComponent->ServerEquipSpecifiedWeapon_1();
@@ -1191,6 +1218,7 @@ void AMP_Character::EquipPrimaryWeapon(const FInputActionValue& Value)
 
 void AMP_Character::EquipSecondaryWeapon(const FInputActionValue& Value)
 {
+	if (CombatComponent && CombatComponent->bHoldingTheFlag) return;
 	if (CombatComponent && CombatComponent->SecondaryWeaponPtr)
 	{
 		CombatComponent->ServerEquipSpecifiedWeapon_2();
@@ -1199,3 +1227,4 @@ void AMP_Character::EquipSecondaryWeapon(const FInputActionValue& Value)
 }
 
 #pragma endregion
+

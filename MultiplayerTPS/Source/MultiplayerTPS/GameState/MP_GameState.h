@@ -29,6 +29,7 @@ public:
 	/**
 	* Teams
 	*/
+	int32 MaxScore = 5;
 	TArray<AMP_PlayerState*> RedTeam;
 	TArray<AMP_PlayerState*> BlueTeam;
 
@@ -48,4 +49,7 @@ public:
 	
 private:
 	float TopScore = 0;
+
+public:
+	FORCEINLINE void SetMaxScore(int32 score) { MaxScore = score; }
 };

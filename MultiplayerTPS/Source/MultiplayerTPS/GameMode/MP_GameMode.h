@@ -57,4 +57,5 @@ private:
 
 public:
 	FORCEINLINE float GetCountdownTime() const { return CountdownTime; }
+	FORCEINLINE void FinishTeamsGame() { SetMatchState(MatchState::Cooldown); }
 };

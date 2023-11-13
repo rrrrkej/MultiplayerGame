@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -481,5 +481,6 @@ public:
 	FORCEINLINE UBuffComponent* GetBuffComponent() const { return BuffComponent; } // return buff component
 	bool IsLocallyReloading();
 	FORCEINLINE ULagCompensationComponent* GetLagCompensationComponent() { return LagCompensationComponent; } // return LagCompensation
+	FORCEINLINE bool IsHoldingTheFlag() const;
 };
 

@@ -1,10 +1,11 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "WeaponTypes.h"
+#include "MultiplayerTPS/Types/Team.h"
 #include "Weapon.generated.h"
 
 UENUM(BlueprintType)
@@ -58,7 +59,7 @@ public:
 	//Play Fire animation, spend round
 	virtual void Fire(const FVector& HitTarget);
 	// Drop weapon
-	void Dropped();
+	virtual void Dropped();
 	// Called when finish relaoded weapon
 	virtual void AddAmmo(int32 AmmoToAdd);
 
@@ -222,6 +223,8 @@ private:
 	UPROPERTY(EditAnywhere)
 	EWeaponType WeaponType;
 
+	UPROPERTY(EditAnywhere)
+	ETeam Team = ETeam::ET_NoTeam;
 
 public:
 	void SetWeaponState(EWeaponState State);
@@ -241,4 +244,5 @@ public:
 	FORCEINLINE int32 GetMagCapacity() const { return MagCapacity; }
 	FORCEINLINE float GetDamage() const { return Damage; }
 	FORCEINLINE float GetHeadShotDamage() const{ return HeadShotDamage; }
+	FORCEINLINE UWidgetComponent* GetPickupWidget() const { return PickupWidget; }
 };

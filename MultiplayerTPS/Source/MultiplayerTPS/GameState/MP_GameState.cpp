@@ -3,8 +3,10 @@
 
 #include "MP_GameState.h"
 #include "Net/UnrealNetwork.h"
+#include "Kismet/GameplayStatics.h"
 #include "MultiplayerTPS/PlayerState/MP_PlayerState.h"
 #include "MultiplayerTPS/PlayerController/MP_PlayerController.h"
+#include "MultiplayerTPS/GameMode/MP_GameMode.h"
 
 void AMP_GameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -60,6 +62,14 @@ void AMP_GameState::RedTeamScores()
 	{
 		MP_PlayerController->SetHUDRedTeamScore(RedTeamScore);
 	}
+	if (RedTeamScore == MaxScore)
+	{
+		AMP_GameMode* MP_GameMode = Cast<AMP_GameMode>(UGameplayStatics::GetGameMode(GetWorld()));
+		if (MP_GameMode)
+		{
+			MP_GameMode->FinishTeamsGame();
+		}
+	}
 }
 
 void AMP_GameState::BlueTeamScores()
@@ -69,5 +79,13 @@ void AMP_GameState::BlueTeamScores()
 	if (MP_PlayerController)
 	{
 		MP_PlayerController->SetHUDBlueTeamScore(BlueTeamScore);
+	}
+	if (BlueTeamScore == MaxScore)
+	{
+		AMP_GameMode* MP_GameMode = Cast<AMP_GameMode>(UGameplayStatics::GetGameMode(GetWorld()));
+		if (MP_GameMode)
+		{
+			MP_GameMode->FinishTeamsGame();
+		}
 	}
 }

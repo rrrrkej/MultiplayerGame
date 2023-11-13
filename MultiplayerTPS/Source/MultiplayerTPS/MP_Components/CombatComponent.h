@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -42,10 +42,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void FinishSwap();
 
-	// AnimNotify : ShotgunÌØ¹©×°µ¯º¯Êı
+	// AnimNotify : Shotgunç‰¹ä¾›è£…å¼¹å‡½æ•°
 	UFUNCTION(BlueprintCallable)
 	void ShotgunShellReload();
-	//Shotgun½áÊø×°µ¯
+	//Shotgunç»“æŸè£…å¼¹
 	void JumpToShotgunEnd();
 
 	// AnimNotify : ThrowGrenadeFinished AnimNotify
@@ -104,10 +104,10 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void MulticastShotgunFire(const TArray<FVector_NetQuantize>& TraceHitTargets);
 
-	// ¼ÆËãÆÁÄ»ÖĞĞÄÃüÖĞ½á¹û
+	// è®¡ç®—å±å¹•ä¸­å¿ƒå‘½ä¸­ç»“æœ
 	void TraceUnderCrosshairs(FHitResult& TraceHitResult);
 
-	// ÉèÖÃÆÁÄ»×¼ĞÄ
+	// è®¾ç½®å±å¹•å‡†å¿ƒ
 	void SetHUDCrosshairs(float DeltaTime);
 
 	// Reload related
@@ -136,6 +136,8 @@ protected:
 	void AttachActorToLeftHand(AActor* ActorToAttach);
 	// Attach Actor to Character's Backpack socket
 	void AttachActorToBackpack(AActor* ActorToAttach);
+	// Attach Flag(sword mesh)to flagsocket
+	void AttachFlagToLeftHand(AWeapon* Flag);
 
 	// Set CarriedAmmo and update HUD
 	void UpdateCarriedAmmo();
@@ -158,6 +160,16 @@ protected:
 	void ServerEquipSpecifiedWeapon_1();
 	UFUNCTION(Server, Reliable)
 	void ServerEquipSpecifiedWeapon_2();
+
+	/**
+	* FlagGameMode properties
+	*/
+	UPROPERTY(ReplicatedUsing = OnRep_HoldingTheFlag)
+	bool bHoldingTheFlag = false;
+	UFUNCTION()
+	void OnRep_HoldingTheFlag();
+	UPROPERTY()
+	AWeapon* TheFlag;
 
 private:
 	UPROPERTY()
