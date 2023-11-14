@@ -110,11 +110,16 @@ protected:
 	// Poll for any relevant classes and initizlize HUDoverlay class
 	void PollInit();
 
+	void OnPlayerStateInitialized();
+
 	// Founction for Rotate In Place feature
 	void RotateInPlace(float DeltaTime);
 
 	// Set health progress bar in OverheadWidget
 	void SetOverheadHealth();
+
+	// Set Spawn location depends Team(in CpatureFlagGameMode)
+	void SetSpawnPoint();
 
 #pragma region BoxComponents
 	/**
@@ -482,5 +487,6 @@ public:
 	bool IsLocallyReloading();
 	FORCEINLINE ULagCompensationComponent* GetLagCompensationComponent() { return LagCompensationComponent; } // return LagCompensation
 	FORCEINLINE bool IsHoldingTheFlag() const;
+	ETeam GetTeam();
 };
 

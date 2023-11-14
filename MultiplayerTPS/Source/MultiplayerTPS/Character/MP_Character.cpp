@@ -32,6 +32,8 @@
 #include "MultiplayerTPS/UserWidget/OverheadWidget.h"
 #include "MultiplayerTPS/MP_Components/LagCompensationComponent.h"
 #include "MultiplayerTPS/GameState/MP_GameState.h"
+#include "MultiplayerTPS/PlayerStart/TeamPlayerStart.h"
+
 #include "../DebugHeader.h"
 
 AMP_Character::AMP_Character()
@@ -422,16 +424,22 @@ void AMP_Character::PollInit()
 		MP_PlayerState = GetPlayerState<AMP_PlayerState>();
 		if (MP_PlayerState)
 		{
-			MP_PlayerState->AddToScore(0.f);
-			MP_PlayerState->AddToDefeats(0);
-			SetTeamColor(MP_PlayerState->GetTeam());
-
-			AMP_GameState* MP_GameState = Cast<AMP_GameState>(UGameplayStatics::GetGameState(this));
-			if (MP_GameState && MP_GameState->TopScoringPlayers.Contains(MP_PlayerState))
-			{
-				MulticastGainedTheLead();
-			}
+			OnPlayerStateInitialized();
 		}
+	}
+}
+
+void AMP_Character::OnPlayerStateInitialized()
+{
+	MP_PlayerState->AddToScore(0.f);
+	MP_PlayerState->AddToDefeats(0);
+	SetTeamColor(MP_PlayerState->GetTeam());
+	SetSpawnPoint();
+
+	AMP_GameState* MP_GameState = Cast<AMP_GameState>(UGameplayStatics::GetGameState(this));
+	if (MP_GameState && MP_GameState->TopScoringPlayers.Contains(MP_PlayerState))
+	{
+		MulticastGainedTheLead();
 	}
 }
 
@@ -474,6 +482,33 @@ void AMP_Character::SetOverheadHealth()
 	{
 		const float HealthPercent = Health / MaxHealth;
 		OverheadWidget->HealthBar->SetPercent(HealthPercent);
+	}
+}
+
+void AMP_Character::SetSpawnPoint()
+{
+	if (HasAuthority() && MP_PlayerState && MP_PlayerState->GetTeam() != ETeam::ET_NoTeam)
+	{
+		TArray<AActor*> PlayerStarts;
+		UGameplayStatics::GetAllActorsOfClass(this, ATeamPlayerStart::StaticClass(), PlayerStarts);
+		TArray<ATeamPlayerStart*> TeamPlayerStarts;
+		for (auto Start : PlayerStarts)
+		{
+			ATeamPlayerStart* TeamStart = Cast<ATeamPlayerStart>(Start);
+			if (TeamStart && TeamStart->Team == MP_PlayerState->GetTeam())
+			{
+				TeamPlayerStarts.Add(TeamStart);
+
+			}
+		}
+		if (TeamPlayerStarts.Num() > 0)
+		{
+			ATeamPlayerStart* ChosenPlayerStart = TeamPlayerStarts[FMath::RandRange(0, TeamPlayerStarts.Num() - 1)];
+			SetActorLocationAndRotation(
+				ChosenPlayerStart->GetActorLocation(),
+				ChosenPlayerStart->GetActorRotation()
+			); 
+		}
 	}
 }
 
@@ -983,6 +1018,13 @@ bool AMP_Character::IsHoldingTheFlag() const
 {
 	if (CombatComponent == nullptr) return false;
 	return CombatComponent->bHoldingTheFlag;
+}
+
+ETeam AMP_Character::GetTeam()
+{
+	MP_PlayerState = MP_PlayerState == nullptr ? GetPlayerState<AMP_PlayerState>() : MP_PlayerState;
+	if (MP_PlayerState == nullptr) return ETeam::ET_NoTeam;
+	return MP_PlayerState->GetTeam();
 }
 
 #pragma region InputBinding

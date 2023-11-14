@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "Weapon.h"
@@ -97,6 +97,10 @@ void AWeapon::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 	AMP_Character* MP_Character = Cast<AMP_Character>(OtherActor);
 	if (MP_Character)
 	{
+		// åœ¨CaptureFlagçš„æ¨¡å¼ä¸­ï¼Œå¦‚æžœFlagä¸å±žäºŽæœ¬åœ°playerstateï¼Œ return
+		if (WeaponType == EWeaponType::EWT_Flag && MP_Character->GetTeam() != Team) return;
+		// return while character's bHoldingTheFlag is true
+		if (MP_Character->IsHoldingTheFlag()) return;
 		MP_Character-> SetOverlappingWeapon(this);
 	}
 }
@@ -106,6 +110,10 @@ void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 	AMP_Character* MP_Character = Cast<AMP_Character>(OtherActor);
 	if (MP_Character)
 	{
+		// åœ¨CaptureFlagçš„æ¨¡å¼ä¸­ï¼Œå¦‚æžœFlagä¸å±žäºŽæœ¬åœ°playerstateï¼Œ return
+		if (WeaponType == EWeaponType::EWT_Flag && MP_Character->GetTeam() != Team) return;
+		// return while character's bHoldingTheFlag is true
+		if (MP_Character->IsHoldingTheFlag()) return;
 		MP_Character->SetOverlappingWeapon(nullptr);
 	}
 }
@@ -143,28 +151,6 @@ void AWeapon::SetWeaponState(EWeaponState State)
 	OnWeaponStateSet();
 }
 
-void AWeapon::OnWeaponStateSet()
-{
-	switch (WeaponState)
-	{
-	case EWeaponState::EWS_Initial:
-		break;
-	case EWeaponState::EWS_Equipped:
-		HandleStateInEquipped();
-		break;
-	case EWeaponState::EWS_Dropped:
-		HandleStateInDropped();
-		break;
-	case EWeaponState::EWS_EquippedSecondary:
-		HandleStateInEquippedSecondary();
-		break;
-	case EWeaponState::EWS_MAX:
-		break;
-	default:
-		break;
-	}
-}
-
 void AWeapon::OnPingTooHigh(bool bPingTooHigh)
 {
 	bUseServerSideRewind = !bPingTooHigh;
@@ -199,14 +185,14 @@ void AWeapon::HandleStateInEquipped()
 	WeaponMesh->SetSimulatePhysics(false);
 	WeaponMesh->SetEnableGravity(false);
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	//	Èç¹ûÎäÆ÷ÓÐÎïÀíÄ£ÄâÐ§¹û£¨±ÈÈçSMGµÄ´ø×Ó£©£¬ÔòÐèÒª¿ªÆôÎïÀíÐ§¹û
+	//	å¦‚æžœæ­¦å™¨æœ‰ç‰©ç†æ¨¡æ‹Ÿæ•ˆæžœï¼ˆæ¯”å¦‚SMGçš„å¸¦å­ï¼‰ï¼Œåˆ™éœ€è¦å¼€å¯ç‰©ç†æ•ˆæžœ
 	if (WeaponType == EWeaponType::EWT_SubmachineGun)
 	{
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		WeaponMesh->SetEnableGravity(true);
 		WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	}
-	//	¹Ø±ÕÂÖÀª¹â
+	//	å…³é—­è½®å»“å…‰
 	EnableCustomDepth(false);
 	// SSR settings binding delegate
 	OwnerCharacter = OwnerCharacter == nullptr ? Cast<AMP_Character>(GetOwner()) : OwnerCharacter;
@@ -227,14 +213,14 @@ void AWeapon::HandleStateInEquippedSecondary()
 	WeaponMesh->SetSimulatePhysics(false);
 	WeaponMesh->SetEnableGravity(false);
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	//	Èç¹ûÎäÆ÷ÓÐÎïÀíÄ£ÄâÐ§¹û£¨±ÈÈçSMGµÄ´ø×Ó£©£¬ÔòÐèÒª¿ªÆôÎïÀíÐ§¹û
+	//	å¦‚æžœæ­¦å™¨æœ‰ç‰©ç†æ¨¡æ‹Ÿæ•ˆæžœï¼ˆæ¯”å¦‚SMGçš„å¸¦å­ï¼‰ï¼Œåˆ™éœ€è¦å¼€å¯ç‰©ç†æ•ˆæžœ
 	if (WeaponType == EWeaponType::EWT_SubmachineGun)
 	{
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		WeaponMesh->SetEnableGravity(true);
 		WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	}
-	//	¹Ø±ÕÂÖÀª¹â
+	//	å…³é—­è½®å»“å…‰
 	EnableCustomDepth(false);
 	//	GetWeaponMesh()->SetCustomDepthStencilValue(CUSTOM_DEPTH_BLUE);
 	//	GetWeaponMesh()->MarkRenderStateDirty();
@@ -262,7 +248,7 @@ void AWeapon::HandleStateInDropped()
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
 	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
-	//	´ò¿ªÂÖÀª¹â
+	//	æ‰“å¼€è½®å»“å…‰
 	WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_BLUE);
 	WeaponMesh->MarkRenderStateDirty();
 	EnableCustomDepth(true);

@@ -100,7 +100,27 @@ protected:
 	virtual void BeginPlay() override;
 
 	// Called in SetWeaponState()
-	virtual void OnWeaponStateSet();
+	virtual void OnWeaponStateSet()
+	{
+		switch (WeaponState)
+		{
+		case EWeaponState::EWS_Initial:
+			break;
+		case EWeaponState::EWS_Equipped:
+			HandleStateInEquipped();
+			break;
+		case EWeaponState::EWS_Dropped:
+			HandleStateInDropped();
+			break;
+		case EWeaponState::EWS_EquippedSecondary:
+			HandleStateInEquippedSecondary();
+			break;
+		case EWeaponState::EWS_MAX:
+			break;
+		default:
+			break;
+		}
+	}
 
 	// Called when WeaponState transition to Equipped
 	virtual void HandleStateInEquipped();
