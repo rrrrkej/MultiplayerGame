@@ -10,7 +10,7 @@ ATeamPlayerStart::ATeamPlayerStart() : APlayerStart(FObjectInitializer::Get())
 {
 	PlayerStartMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PlayerStartMesh"));
 	PlayerStartMesh->SetupAttachment(GetRootComponent());
-	PlayerStartMesh->SetRelativeLocation(FVector(0, 0, -120));
+	PlayerStartMesh->SetRelativeLocation(FVector(0.f, 0.f, -120.f));
 	GetRootComponent()->SetVisibility(true);
 	PlayerStartMesh->SetVisibility(true);
 }

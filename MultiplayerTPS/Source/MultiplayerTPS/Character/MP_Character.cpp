@@ -452,6 +452,13 @@ void AMP_Character::RotateInPlace(float DeltaTime)
 		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 		return;
 	}
+	// 目前应用于丢掉旗子后的状态
+	if(CombatComponent->EquippedWeapon)
+	{
+		GetCharacterMovement()->bOrientRotationToMovement = false;
+		bUseControllerRotationYaw = true;
+	}
+
 	//	Handle
 	if (bDisableGameplay)
 	{
@@ -1025,6 +1032,13 @@ ETeam AMP_Character::GetTeam()
 	MP_PlayerState = MP_PlayerState == nullptr ? GetPlayerState<AMP_PlayerState>() : MP_PlayerState;
 	if (MP_PlayerState == nullptr) return ETeam::ET_NoTeam;
 	return MP_PlayerState->GetTeam();
+}
+
+void AMP_Character::SetHoldingTheFlag(bool bHolding)
+{
+	if (CombatComponent == nullptr) return;
+	CombatComponent->bHoldingTheFlag = bHolding;
+
 }
 
 #pragma region InputBinding

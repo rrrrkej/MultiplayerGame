@@ -5,6 +5,7 @@
 #include "Components/StaticmeshComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
+#include "MultiplayerTPS/Character/MP_Character.h"
 
 AFlag::AFlag()
 {
@@ -17,6 +18,13 @@ AFlag::AFlag()
 	FlagMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
+void AFlag::BeginPlay()
+{
+	Super::BeginPlay();
+
+	InitialTransform = GetActorTransform();
+}
+
 void AFlag::Dropped()
 {
 	SetWeaponState(EWeaponState::EWS_Dropped);
@@ -27,12 +35,37 @@ void AFlag::Dropped()
 	OwnerController = nullptr;
 }
 
+void AFlag::ResetFlag()
+{
+	AMP_Character* FlagBearer = Cast<AMP_Character>(GetOwner());
+	if (FlagBearer)
+	{
+		FlagBearer->SetHoldingTheFlag(false);
+		FlagBearer->SetOverlappingWeapon(nullptr);
+		FlagBearer->UnCrouch();
+	}
+
+	if (!HasAuthority()) return;
+	SetWeaponState(EWeaponState::EWS_Initial);
+	FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld, true);
+	FlagMesh->DetachFromComponent(DetachRules);
+	SetOwner(nullptr);
+	OwnerCharacter = nullptr;
+	OwnerController = nullptr;
+
+	SetActorTransform(InitialTransform);
+}
+
+
+
 void AFlag::HandleStateInEquipped()
 {
 	ShowPickupWidget(false);
 	GetAreaSphere()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	FlagMesh->SetSimulatePhysics(false);
 	FlagMesh->SetEnableGravity(false);
+	FlagMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	FlagMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
 }
 
 void AFlag::HandleStateInDropped()
