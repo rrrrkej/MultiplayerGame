@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "CountdownWidget.h"
@@ -22,8 +22,8 @@ void UCountdownWidget::WidgetSetup(int32 CountDownSecond)
 
 void UCountdownWidget::CountdownOver()
 {
-	SetVisibility(ESlateVisibility::Hidden);
-	CountdownOverDelegate.Broadcast();
+	RemoveFromParent();
+	CountdownOverDelegate.Broadcast(); // 没绑定也是安全的
 }
 
 void UCountdownWidget::UpadteCountdown()

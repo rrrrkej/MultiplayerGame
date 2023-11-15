@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -87,7 +87,13 @@ private:
 	FOnStartSessionCompleteDelegate StartSessionCompleteDelegate;
 	FDelegateHandle StartSessionCompleteDelegateHandle;
 
+	// 防止移动map失败，此时会话存在。所以重新创建会话并移动map
 	bool	bCreateSessionOnDestroy{ false };
 	int32	LastNumPublicConnections;
 	FString LastMatchType;
+
+public:
+	int32 DesiredNumPublicConnections{}; // Desired player numbers when game start
+	FString DesiredMatchType{};	// Desired GameMode
+	
 };

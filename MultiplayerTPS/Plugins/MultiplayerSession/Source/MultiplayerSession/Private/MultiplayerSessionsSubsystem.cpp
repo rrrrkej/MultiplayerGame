@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "MultiplayerSessionsSubsystem.h"
@@ -22,6 +22,9 @@ UMultiplayerSessionsSubsystem::UMultiplayerSessionsSubsystem():
 #pragma region public interface
 void UMultiplayerSessionsSubsystem::CreateSession(int32 NumPublicConnections, FString MatchType)
 {
+	DesiredNumPublicConnections = NumPublicConnections;
+	DesiredMatchType = MatchType;
+
 	if (!SessionInterface.IsValid())
 	{
 		return;

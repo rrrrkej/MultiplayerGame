@@ -549,8 +549,8 @@ void AMP_PlayerController::CheckPing(float DeltaTime)
 	HighPingRunningTime += DeltaTime;
 	if (HighPingRunningTime > CheckPingFrequency)
 	{
-	/*	PlayerState = PlayerState == nullptr ? GetPlayerState<APlayerState>() : PlayerState;
-		if (!HasAuthority() && GetPawn()->IsLocallyControlled())
+		PlayerState = PlayerState == nullptr ? GetPlayerState<APlayerState>() : PlayerState;
+		/*if (!HasAuthority() && GetPawn()->IsLocallyControlled())
 		{
 			DebugHeader::Print(FString::Printf(TEXT("Get Ping(): %f"), PlayerState->GetPingInMilliseconds()), FColor::Blue);
 		}*/
@@ -783,6 +783,33 @@ void AMP_PlayerController::ReturnMenu_Pressed(const FInputActionValue& Value)
 void AMP_PlayerController::BroadcastElim(APlayerState* Attacker, APlayerState* Victim)
 {
 	ClientElimAnnouncement(Attacker, Victim);
+}
+
+void AMP_PlayerController::SaveRecentPing()
+{
+	float NewestTime = GetWorld() != nullptr ? GetWorld()->GetTimeSeconds() : 0;
+	float NewestPing = PlayerState != nullptr ? PlayerState->GetPingInMilliseconds() : 0;
+	if (Ping.Num() == 0)
+	{
+		Ping.Add(TPair<float, float>(NewestTime, NewestPing));
+		SumOfPing += NewestPing;
+	}
+	else 
+	{
+		TPair<float, float>& OldestPair = Ping[0];
+		if (NewestTime - OldestPair.Key < 4)
+		{
+			Ping.Add(TPair<float, float>(NewestTime, NewestPing));
+			SumOfPing += NewestPing;
+		}
+		else
+		{
+			Ping.RemoveAt(0);
+			Ping.Add(TPair<float, float>(NewestTime, NewestPing));
+			SumOfPing += NewestPing;
+		}
+	}
+	PingAverage = SumOfPing / Ping.Num();
 }
 
 void AMP_PlayerController::ClientElimAnnouncement_Implementation(APlayerState* Attacker, APlayerState* Victim)

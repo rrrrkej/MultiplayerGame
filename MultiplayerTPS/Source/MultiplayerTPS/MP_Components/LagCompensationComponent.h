@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -33,7 +33,7 @@ struct FFramePackage
 	TMap<FName, FBoxInformation> HitBoxInfo;	// key:name of BoxComponent, value: related info
 
 	UPROPERTY()
-	AMP_Character* Character;	//	×÷Îª´æ´¢°üÊ±£¬´Ë´¦Îª±¾»úcharcter£¬Ò²¾ÍÊÇ³õÊ¼Öµ£»×÷ÎªGetFrameToCheck()·µ»ØÖµÊ±£¬·µ»ØµÄÊÇHitCharacter¼°ÆäĞÅÏ¢
+	AMP_Character* Character;	//	ä½œä¸ºå­˜å‚¨åŒ…æ—¶ï¼Œæ­¤å¤„ä¸ºæœ¬æœºcharcterï¼Œä¹Ÿå°±æ˜¯åˆå§‹å€¼ï¼›ä½œä¸ºGetFrameToCheck()è¿”å›å€¼æ—¶ï¼Œè¿”å›çš„æ˜¯HitCharacteråŠå…¶ä¿¡æ¯
 };
 
 USTRUCT(BlueprintType)
@@ -190,4 +190,6 @@ private:
 	
 	// Record FramePackage process, insert at head node
 	void RecordFrame();
+
+
 };

@@ -79,6 +79,13 @@ public:
 	* Broadcast announcement when elimed
 	*/
 	void BroadcastElim(APlayerState* Attacker, APlayerState* Victim);
+
+	// Save the ping values of the last 4 seconds
+	void SaveRecentPing();
+	TArray<TPair<float, float>> Ping; // Key is time, Value is ping
+	float SumOfPing = 0;   // Calculate sum of ping
+	float PingAverage = 0; // Calculate Average of variable ping
+
 protected: 
 	// 实际输出的内容，根据角色相对关系进行调整
 	UFUNCTION(Client, Reliable)
@@ -205,6 +212,7 @@ private:
 
 	// GameState进入 Cooldown的累计时间
 	float CooldownElapse = 0.f;
+
 #pragma region UI
 	/**
 	* Return to main menu

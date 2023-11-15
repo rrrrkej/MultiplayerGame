@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -18,7 +18,6 @@ class MULTIPLAYERTPS_API AMP_PlayerState : public APlayerState
 	GENERATED_BODY()
 public:
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty>& OutLifetimeProps) const override;
-
 	/**
 	* Replication notifies
 	*/

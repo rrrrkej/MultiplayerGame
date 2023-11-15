@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "LagCompensationComponent.h"
@@ -334,7 +334,7 @@ FServerSideRewindResult ULagCompensationComponent::ProjectileConfirmHit(const FF
 	PathParams.ProjectileRadius = 5.f;
 	PathParams.TraceChannel = ECC_HitBox;
 	PathParams.ActorsToIgnore.Add(GetOwner());
-	// Éú³ÉDebugSphere£¨µ÷ÓÃ±¾º¯Êı²Å»áÉú³É£¬ËùÒÔServer¶ËÉú³É²»ÁË£©
+	// ç”ŸæˆDebugSphereï¼ˆè°ƒç”¨æœ¬å‡½æ•°æ‰ä¼šç”Ÿæˆï¼Œæ‰€ä»¥Serverç«¯ç”Ÿæˆä¸äº†ï¼‰
 	//PathParams.DrawDebugTime = 5.f;
 	//PathParams.DrawDebugType = EDrawDebugTrace::ForDuration;
 	FPredictProjectilePathResult PathResult;
