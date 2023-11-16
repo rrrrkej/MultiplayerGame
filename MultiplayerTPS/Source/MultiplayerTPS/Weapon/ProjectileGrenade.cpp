@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "ProjectileGrenade.h"
@@ -19,6 +19,7 @@ AProjectileGrenade::AProjectileGrenade()
 	ProjectileMovementComponent->SetIsReplicated(true);
 	ProjectileMovementComponent->bShouldBounce = true;
 
+	ProjectileMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 }
 
 void AProjectileGrenade::BeginPlay()
@@ -42,7 +43,7 @@ void AProjectileGrenade::BeginPlay()
 
 void AProjectileGrenade::OnBounce(const FHitResult& ImpactResult, const FVector& ImpactVelocity)
 {
-	//	Êä³öÒýÇæÅö×²µÄÎïÌåÃû³Æ 
+	//	è¾“å‡ºå¼•æ“Žç¢°æ’žçš„ç‰©ä½“åç§° 
 	if (ImpactResult.GetActor() != nullptr)
 	{
 		FString ActorName = ImpactResult.GetActor()->GetName();

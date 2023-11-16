@@ -91,7 +91,9 @@ void AMP_PlayerController::Tick(float DeltaTime)
 	PollInit();
 
 	CheckPing(DeltaTime);
-	
+
+	SaveRecentPing();
+
 	if (MatchState == MatchState::Cooldown)
 	{
 		CooldownElapse += DeltaTime;
@@ -787,6 +789,8 @@ void AMP_PlayerController::BroadcastElim(APlayerState* Attacker, APlayerState* V
 
 void AMP_PlayerController::SaveRecentPing()
 {
+	if (GetLocalRole() == ROLE_SimulatedProxy) return;
+
 	float NewestTime = GetWorld() != nullptr ? GetWorld()->GetTimeSeconds() : 0;
 	float NewestPing = PlayerState != nullptr ? PlayerState->GetPingInMilliseconds() : 0;
 	if (Ping.Num() == 0)
@@ -804,12 +808,13 @@ void AMP_PlayerController::SaveRecentPing()
 		}
 		else
 		{
+			SumOfPing -= Ping[0].Value;
 			Ping.RemoveAt(0);
 			Ping.Add(TPair<float, float>(NewestTime, NewestPing));
 			SumOfPing += NewestPing;
 		}
 	}
-	PingAverage = SumOfPing / Ping.Num();
+	AveragePing = SumOfPing / Ping.Num();
 }
 
 void AMP_PlayerController::ClientElimAnnouncement_Implementation(APlayerState* Attacker, APlayerState* Victim)

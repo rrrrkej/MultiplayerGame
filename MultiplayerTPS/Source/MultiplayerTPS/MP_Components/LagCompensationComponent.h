@@ -62,6 +62,7 @@ struct FShotgunServerSideRewindResult
 class AMP_PlayerController;
 class AMP_Character;
 class AWeapon;
+class AMP_GameMode;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class MULTIPLAYERTPS_API ULagCompensationComponent : public UActorComponent
@@ -178,12 +179,17 @@ protected:
 
 	void EnableCharacterMeshCollision(AMP_Character* HitCharacter, ECollisionEnabled::Type CollisionEnabled);
 
+	// Make fine adjustments to the hit time based on network quality.
+	void LagTimeOffset(float& time);
 private:
 	UPROPERTY()
 	AMP_Character* Character;
 	
 	UPROPERTY()
 	AMP_PlayerController* Controller;
+
+	UPROPERTY()
+	AMP_GameMode* MP_GameMode;
 
 	UPROPERTY(EditAnywhere)
 	float MaxRecordTime = 4.f;

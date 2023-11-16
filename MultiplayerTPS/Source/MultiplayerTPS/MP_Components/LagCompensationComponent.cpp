@@ -8,6 +8,8 @@
 
 #include "MultiplayerTPS/MultiplayerTPS.h"
 #include "MultiplayerTPS/Character/MP_Character.h"
+#include "MultiplayerTPS/GameMode/MP_GameMode.h"
+#include "MultiplayerTPS/PlayerController/MP_PlayerController.h"
 #include "MultiplayerTPS/Weapon/Weapon.h"
 #include "MultiplayerTPS/DebugHeader.h"
 
@@ -138,6 +140,7 @@ void ULagCompensationComponent::ShotgunServerScoreRequest_Implementation(const T
 
 FServerSideRewindResult ULagCompensationComponent::ServerSideRewind(AMP_Character* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime)
 {
+	LagTimeOffset(HitTime);
 	FFramePackage FrameToCheck = GetFrameToCheck(HitCharacter, HitTime);
 
 	return ConfirmHit(FrameToCheck, HitCharacter, TraceStart, HitLocation);
@@ -145,12 +148,14 @@ FServerSideRewindResult ULagCompensationComponent::ServerSideRewind(AMP_Characte
 
 FServerSideRewindResult ULagCompensationComponent::ProjectileServerSideRewind(AMP_Character* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, float HitTime)
 {
+	LagTimeOffset(HitTime);
 	FFramePackage FrameToCheck = GetFrameToCheck(HitCharacter, HitTime);
 	return ProjectileConfirmHit(FrameToCheck, HitCharacter, TraceStart, InitialVelocity, HitTime);
 }
 
 FShotgunServerSideRewindResult ULagCompensationComponent::ShotgunServerSideRewind(const TArray<AMP_Character*>& HitCharacters, const FVector_NetQuantize& TraceStart,const TArray<FVector_NetQuantize>& HitLocations, float HitTime)
 {
+	LagTimeOffset(HitTime);
 	TArray<FFramePackage> FrameToChecks;	//	Store framepackages for HitTargets
 	for (AMP_Character* HitCharacter : HitCharacters)
 	{
@@ -158,8 +163,6 @@ FShotgunServerSideRewindResult ULagCompensationComponent::ShotgunServerSideRewin
 	}
 	return ShotgunConfirmHit(FrameToChecks, TraceStart, HitLocations);
 }
-
-
 
 FFramePackage ULagCompensationComponent::GetFrameToCheck(AMP_Character* HitCharacter, float HitTime)
 {
@@ -190,7 +193,7 @@ FFramePackage ULagCompensationComponent::GetFrameToCheck(AMP_Character* HitChara
 		FrameToCheck = History.GetTail()->GetValue();
 		bShouldInterpolate = false;
 	}
-	if (NewestHistoryTime <= HitTime)
+	if (NewestHistoryTime <= HitTime) // 比最新的服务器时间更快，理论不可能
 	{
 		FrameToCheck = History.GetHead()->GetValue();
 		bShouldInterpolate = false;
@@ -515,6 +518,19 @@ void ULagCompensationComponent::EnableCharacterMeshCollision(AMP_Character* HitC
 	if (HitCharacter && HitCharacter->GetMesh())
 	{
 		HitCharacter->GetMesh()->SetCollisionEnabled(CollisionEnabled);
+	}
+}
+
+void ULagCompensationComponent::LagTimeOffset(float& time)
+{
+	MP_GameMode = MP_GameMode == nullptr ? Cast<AMP_GameMode>(GetWorld()->GetAuthGameMode()) : MP_GameMode;
+	if (Controller->AveragePing < time)
+	{
+		return;
+	}
+	else
+	{
+		time += (Controller->AveragePing - MP_GameMode->GlobalPing) * 0.5;
 	}
 }
 

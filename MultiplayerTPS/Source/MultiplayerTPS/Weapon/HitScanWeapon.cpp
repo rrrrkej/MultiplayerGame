@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "HitScanWeapon.h"
@@ -47,7 +47,7 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 						InstigatorController,
 						this,
 						UDamageType::StaticClass()
-					);
+					); 
 				}
 				if(!HasAuthority() && bUseServerSideRewind)
 				{
@@ -61,6 +61,7 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 							FireHit.ImpactPoint,
 							OwnerController->GetServerTime() - OwnerController->SingleTripTime
 						);
+						AMP_Character* Character = Cast<AMP_Character>(InstigatorController->GetPawn());
 					}
 				}
 		}

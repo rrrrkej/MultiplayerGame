@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "ProjectileBullet.h"
@@ -43,6 +43,7 @@ void AProjectileBullet::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherAc
 	if (OwnerCharacter)
 	{
 		AMP_PlayerController* OwnerController = Cast<AMP_PlayerController>(OwnerCharacter->Controller);
+		AMP_Character* HitCharacter = Cast<AMP_Character>(OtherActor);
 		if (OwnerController)
 		{
 			if (OwnerCharacter->HasAuthority() && !bUseServerSideRewind)
@@ -54,7 +55,6 @@ void AProjectileBullet::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherAc
 				return;
 			}
 
-			AMP_Character* HitCharacter = Cast<AMP_Character>(OtherActor);
 			if (bUseServerSideRewind && OwnerCharacter->GetLagCompensationComponent() && OwnerCharacter->IsLocallyControlled() && HitCharacter)
 			{	
 				OwnerCharacter->GetLagCompensationComponent()->ProjectileServerScoreRequest(

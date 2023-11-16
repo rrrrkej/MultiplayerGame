@@ -48,13 +48,21 @@ public:
 	float LevelStartingTime = 0; // 关卡（map）开始时间
 
 	bool bTeamsMode = false; // 是否是TeamsGameMode
+
+	// Average of all players, update per second
+	float GlobalPing = 0;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnMatchStateSet() override;
 
+	// Update GlobalPing per second
+	void UpdateGlobalPing();
+
 private:
 	float CountdownTime = 0.f;
 
+	float UpdateSecond = 0.f;
 public:
 	FORCEINLINE float GetCountdownTime() const { return CountdownTime; }
 	FORCEINLINE void FinishTeamsGame() { SetMatchState(MatchState::Cooldown); }

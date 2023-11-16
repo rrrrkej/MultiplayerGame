@@ -55,11 +55,11 @@ void ALobbyGameMode::GameStart(FString GameModeName)
 		}
 		else if (GameModeName == "Teams")
 		{
-			World->ServerTravel(FString("/Game/Maps//MP_Map?listen"));
+			World->ServerTravel(FString("/Game/Maps/ArmsRace?listen"));
 		}
 		else if (GameModeName == "CaptureTheFlag")
 		{
-			World->ServerTravel(FString("/Game/Maps//MP_Map?listen"));
+			World->ServerTravel(FString("/Game/Maps/ArmsRace?listen"));
 		}
 	}
 }

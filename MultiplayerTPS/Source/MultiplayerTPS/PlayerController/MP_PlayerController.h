@@ -84,7 +84,7 @@ public:
 	void SaveRecentPing();
 	TArray<TPair<float, float>> Ping; // Key is time, Value is ping
 	float SumOfPing = 0;   // Calculate sum of ping
-	float PingAverage = 0; // Calculate Average of variable ping
+	float AveragePing = 0; // Calculate Average of variable ping
 
 protected: 
 	// 实际输出的内容，根据角色相对关系进行调整

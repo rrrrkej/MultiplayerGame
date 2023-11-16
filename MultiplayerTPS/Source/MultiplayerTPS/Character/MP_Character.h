@@ -95,6 +95,15 @@ public:
 	// Set mesh material depends on Team(Gamemode)
 	void SetTeamColor(ETeam Team);
 
+	//// Hide health bar 1 second after
+	//float HideTime = 0;
+	//void HideHealthBar();
+	//UFUNCTION(Client, Reliable)
+	//void ClientHideHealthBar(AMP_Character* DamagedCharacter);
+	//void ShowHealthBar();
+	//UFUNCTION(Client, Reliable)
+	//void ClientShowHealthBar(AMP_Character* DamagedCharacter);
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

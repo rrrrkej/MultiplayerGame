@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "Shotgun.h"
@@ -34,7 +34,7 @@ void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& HitTargets)
 	for (const FVector_NetQuantize& HitTarget : HitTargets)
 	{
 		FHitResult FireHit;
-		WeaponTraceHit(Start, HitTarget, FireHit);		// ¼ÆËãÃüÖÐ½á¹û
+		WeaponTraceHit(Start, HitTarget, FireHit);		// è®¡ç®—å‘½ä¸­ç»“æžœ
 
 		AMP_Character* MP_Character = Cast<AMP_Character>(FireHit.GetActor());
 		if (MP_Character)

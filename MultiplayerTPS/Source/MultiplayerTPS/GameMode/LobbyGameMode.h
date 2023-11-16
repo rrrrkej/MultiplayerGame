@@ -21,6 +21,7 @@ public:
 
 private:
 	// 倒计时结束后调用
+	UFUNCTION()
 	void GameStart(FString GameModeName);
 
 	//UCountDownWidget* BP_CountDownWidget;

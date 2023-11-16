@@ -415,6 +415,7 @@ void AMP_Character::Tick(float DeltaTime)
 	RotateInPlace(DeltaTime);
 	HideCamera();
 	PollInit();
+
 }
 
 void AMP_Character::PollInit()
@@ -496,21 +497,21 @@ void AMP_Character::SetSpawnPoint()
 {
 	if (HasAuthority() && MP_PlayerState && MP_PlayerState->GetTeam() != ETeam::ET_NoTeam)
 	{
-		TArray<AActor*> PlayerStarts;
-		UGameplayStatics::GetAllActorsOfClass(this, ATeamPlayerStart::StaticClass(), PlayerStarts);
-		TArray<ATeamPlayerStart*> TeamPlayerStarts;
+		TArray<AActor*> PlayerStarts;	//	保存ATeamPlayerStart类
+		UGameplayStatics::GetAllActorsOfClass(this, ATeamPlayerStart::StaticClass(), PlayerStarts);	 // 筛选对应类
+		TArray<ATeamPlayerStart*> TeamPlayerStarts;	//
 		for (auto Start : PlayerStarts)
 		{
 			ATeamPlayerStart* TeamStart = Cast<ATeamPlayerStart>(Start);
 			if (TeamStart && TeamStart->Team == MP_PlayerState->GetTeam())
 			{
-				TeamPlayerStarts.Add(TeamStart);
+				TeamPlayerStarts.Add(TeamStart);	//
 
 			}
 		}
 		if (TeamPlayerStarts.Num() > 0)
 		{
-			ATeamPlayerStart* ChosenPlayerStart = TeamPlayerStarts[FMath::RandRange(0, TeamPlayerStarts.Num() - 1)];
+			ATeamPlayerStart* ChosenPlayerStart = TeamPlayerStarts[FMath::RandRange(0, TeamPlayerStarts.Num() - 1)];	//	
 			SetActorLocationAndRotation(
 				ChosenPlayerStart->GetActorLocation(),
 				ChosenPlayerStart->GetActorRotation()
@@ -518,6 +519,26 @@ void AMP_Character::SetSpawnPoint()
 		}
 	}
 }
+
+//void AMP_Character::HideHealthBar()
+//{
+//	OverheadWidgetComponent->SetVisibility(false);
+//}
+//
+//void AMP_Character::ClientHideHealthBar_Implementation(AMP_Character* DamagedCharacter)
+//{
+//	DamagedCharacter->OverheadWidgetComponent->SetVisibility(false);
+//}
+//
+//void AMP_Character::ShowHealthBar()
+//{
+//	OverheadWidgetComponent->SetVisibility(true);
+//}
+//
+//void AMP_Character::ClientShowHealthBar_Implementation(AMP_Character* DamagedCharacter)
+//{
+//	DamagedCharacter->OverheadWidgetComponent->SetVisibility(true);
+//}
 
 void AMP_Character::MulticastGainedTheLead_Implementation()
 {

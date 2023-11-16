@@ -83,6 +83,8 @@ void ATeamsGameMode::PlayerEliminated(AMP_Character* ElimmedCharacter, AMP_Playe
 {
 	Super::PlayerEliminated(ElimmedCharacter, VictimController, AttackerController);
 	AMP_GameState* MP_GameState = Cast<AMP_GameState>(UGameplayStatics::GetGameState(this));
+	
+	// 攻击者所属队伍加分
 	AMP_PlayerState* AttackerPlayerState = AttackerController ? Cast<AMP_PlayerState>(AttackerController->PlayerState) : nullptr;
 	if (MP_GameState && AttackerPlayerState)
 	{

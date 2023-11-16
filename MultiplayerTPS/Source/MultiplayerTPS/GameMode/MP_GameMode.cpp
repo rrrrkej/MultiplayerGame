@@ -2,11 +2,12 @@
 
 
 #include "MP_GameMode.h"
+#include "TimerManager.h"
+#include "Kismet/GameplayStatics.h"
+#include "GameFramework/PlayerStart.h"
 #include "MultiplayerTPS/DebugHeader.h"
 #include "MultiplayerTPS/Character/MP_Character.h"
 #include "MultiplayerTPS/PlayerController/MP_PlayerController.h"
-#include "Kismet/GameplayStatics.h"
-#include "GameFramework/PlayerStart.h"
 #include "MultiplayerTPS/PlayerState/MP_PlayerState.h"
 #include "MultiplayerTPS/GameState/MP_GameState.h"
 
@@ -55,6 +56,14 @@ void AMP_GameMode::Tick(float DeltaTime)
 			RestartGame();
 		}
 	}
+
+	// update variable
+	UpdateSecond += DeltaTime;
+	if (UpdateSecond > 1.f)
+	{
+		UpdateGlobalPing();
+		UpdateSecond = 0;
+	}
 }
 
 void AMP_GameMode::OnMatchStateSet()
@@ -69,6 +78,23 @@ void AMP_GameMode::OnMatchStateSet()
 			MP_PlayerController->OnMatchStateSet(MatchState, bTeamsMode);
 		}
 	}
+}
+
+void AMP_GameMode::UpdateGlobalPing()
+{
+	if (GetWorld()->GetNumPlayerControllers() == 1) return;	// 如果只有服务器一个玩家
+
+	float sum = 0;
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
+	{
+		AMP_PlayerController* MP_PlayerController = Cast<AMP_PlayerController>(*It);
+		if (MP_PlayerController)
+		{
+			if (MP_PlayerController->IsLocalController()) continue;
+			sum += MP_PlayerController->AveragePing;
+		}
+	}
+	GlobalPing = sum / (GetWorld()->GetNumPlayerControllers() - 1);
 }
 
 
