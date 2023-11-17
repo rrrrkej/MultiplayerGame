@@ -7,6 +7,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "MultiplayerSessionsSubSystem.h"
 #include "TimerManager.h"
+#include "../DebugHeader.h"
 
 void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 {
@@ -18,17 +19,35 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 	if (GameInstance)
 	{
 		UMultiplayerSessionsSubsystem* Subsystem = GameInstance->GetSubsystem<UMultiplayerSessionsSubsystem>();
-		check(Subsystem);
 										  
 		if (NumberOfPlayers >= Subsystem->DesiredNumPublicConnections)
 		{
-			if (BP_UCountdownWidgetClass)
+			// 倒计时
+			/*if (BP_UCountdownWidgetClass)
 				CountdownWidget = CreateWidget<UCountdownWidget>(GetWorld(), BP_UCountdownWidgetClass);
-			CountdownWidget->WidgetSetup(3);
-			//CountdownWidget->CountdownOverDelegate.AddUObject(this, &ALobbyGameMode::GameStart);
+			CountdownWidget->WidgetSetup(3);*/
 
+			//加载关卡
+			UWorld* World = GetWorld();
+			if (World)
+			{
+				bUseSeamlessTravel = true;
+				FString GameModeName = Subsystem->DesiredMatchType;
+				if (GameModeName == "FreeForAll")
+				{
+					World->ServerTravel(FString("/Game/Maps/MP_Map?listen"));
+				}
+				else if (GameModeName == "Teams")
+				{
+					World->ServerTravel(FString("/Game/Maps/ArmsRace?listen"));				
+				}
+				else if (GameModeName == "CaptureTheFlag")
+				{
+					World->ServerTravel(FString("/Game/Maps/ArmsRace?listen"));					
+				}
+			}
 			// Countdown timer to ServerTravel
-			FTimerHandle GameStartTimer;
+			/*FTimerHandle GameStartTimer;
 			FTimerDelegate GameStartDelegate;
 			GameStartDelegate.BindUFunction(this, FName("GameStart"), Subsystem->DesiredMatchType);
 			GetWorldTimerManager().SetTimer(
@@ -36,7 +55,7 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 				GameStartDelegate,
 				TimeToStart,
 				false
-			);
+			);*/
 		}
 	}
 }

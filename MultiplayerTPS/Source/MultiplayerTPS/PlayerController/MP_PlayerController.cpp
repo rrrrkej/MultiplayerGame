@@ -375,7 +375,7 @@ void AMP_PlayerController::SetHUDRedTeamScore(int32 RedScore)
 	if (bHUDValid)
 	{
 		FString Score = FString::Printf(TEXT("%d"), RedScore);
-		float Percentage = (float)RedScore  / MaxScore;
+		float Percentage = (float)RedScore * 1.0 / MaxScore;
 		MP_HUD->CharacterOverlay->RightScoreText->SetText(FText::FromString(Score));
 		MP_HUD->CharacterOverlay->RightScoreProgressBar->SetPercent(Percentage);
 	}
@@ -392,7 +392,7 @@ void AMP_PlayerController::SetHUDBlueTeamScore(int32 BlueScore)
 	if (bHUDValid)
 	{
 		FString Score = FString::Printf(TEXT("%d"), BlueScore);
-		float Percentage = (float)BlueScore / MaxScore;
+		float Percentage = (float)BlueScore * 1.0 / MaxScore;
 		MP_HUD->CharacterOverlay->LeftScoreText->SetText(FText::FromString(Score));
 		MP_HUD->CharacterOverlay->LeftScoreProgressBar->SetPercent(Percentage);
 	}

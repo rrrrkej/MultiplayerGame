@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "Menu.h"
@@ -79,7 +79,6 @@ void UMenu::OnCreateSession(bool bWasSuccessful)
 	if (bWasSuccessful)
 	{
 		DebugHeader::Print(TEXT("Create Session Successfully!"), FColor::Cyan);
-
 		UWorld* World = GetWorld();
 		if (World)
 		{
@@ -97,13 +96,13 @@ void UMenu::OnFindSessions(const TArray<FOnlineSessionSearchResult>& SessionResu
 {
 	if (MultiplayerSessionsSubsystem == nullptr)
 	{
-		DebugHeader::Print(("MultiplayerSessionsSubsystem = nullptr"), FColor::Red);
+		//DebugHeader::Print(("MultiplayerSessionsSubsystem = nullptr"), FColor::Red);
 		return;
 	}
 
 	for (auto Result : SessionResults)
 	{
-		//¿´²»¶®Õâ¸öKey ºÍValue
+		//çœ‹ä¸æ‡‚è¿™ä¸ªKey å’ŒValue
 		FString SettingsValue;
 		Result.Session.SessionSettings.Get(FName("MatchType"), SettingsValue);
 		if (SettingsValue == MatchType)

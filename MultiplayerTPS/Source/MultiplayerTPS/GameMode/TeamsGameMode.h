@@ -24,7 +24,7 @@ protected:
 	virtual void HandleMatchHasStarted() override;
 
 	UPROPERTY(EditAnywhere)
-	int32 MaxScore = 3;
+	int32 MaxScore = 6;
 
 public:
 	FORCEINLINE int32 GetMaxScore() const { return MaxScore; }

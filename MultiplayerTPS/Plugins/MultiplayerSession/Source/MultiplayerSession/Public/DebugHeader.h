@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #pragma once
 
 #include "Misc/MessageDialog.h"
@@ -7,11 +7,11 @@
 
 namespace DebugHeader
 {
-	static void Print(const FString& Message, const FColor Color)
+	static void Print(const FString& Message, const FColor Color = FColor::Cyan)
 	{
 		if (GEngine)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 8.f, Color, Message);
+			GEngine->AddOnScreenDebugMessage(-1, 3, Color, Message);
 		}
 	}
 
